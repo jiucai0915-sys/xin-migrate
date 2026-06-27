@@ -1,0 +1,13 @@
+# 端侧模型走 Ollama 的 OpenAI 兼容接口
+openai>=1.0.0
+
+# 环境变量
+python-dotenv>=1.0.0
+
+# 验证用数据库（postgres 模拟；生产换达梦/金仓驱动）
+psycopg2-binary>=2.9.0
+sqlparse>=0.4.0
+
+# 前端（B 选用其一，二选一即可，别都装）
+# streamlit>=1.30.0      # 最快出可视化界面
+# fastapi + uvicorn      # 想做更自定义的前后端分离

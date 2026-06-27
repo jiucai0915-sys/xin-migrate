@@ -1,0 +1,58 @@
+{
+  "NVL": {
+    "title": "NVL → COALESCE",
+    "rule": "Oracle 的 NVL(a, b) 改为标准 SQL 的 COALESCE(a, b)",
+    "example_from": "NVL(name, '未知')",
+    "example_to": "COALESCE(name, '未知')",
+    "risk": "低"
+  },
+  "ROWNUM": {
+    "title": "ROWNUM → LIMIT / 窗口函数",
+    "rule": "Oracle 用 ROWNUM 限制行数，达梦/PG 改用 LIMIT；复杂分页用 ROW_NUMBER() OVER()",
+    "example_from": "SELECT * FROM t WHERE ROWNUM <= 10",
+    "example_to": "SELECT * FROM t LIMIT 10",
+    "risk": "中"
+  },
+  "SYSDATE": {
+    "title": "SYSDATE → CURRENT_TIMESTAMP",
+    "rule": "Oracle 的 SYSDATE 改为 CURRENT_TIMESTAMP（或 NOW()）",
+    "example_from": "SELECT SYSDATE FROM DUAL",
+    "example_to": "SELECT CURRENT_TIMESTAMP",
+    "risk": "低"
+  },
+  "DECODE": {
+    "title": "DECODE → CASE WHEN",
+    "rule": "Oracle 的 DECODE(x, v1, r1, v2, r2, default) 改为 CASE WHEN x=v1 THEN r1 ... ELSE default END",
+    "example_from": "DECODE(status, 1, '启用', 0, '停用', '未知')",
+    "example_to": "CASE status WHEN 1 THEN '启用' WHEN 0 THEN '停用' ELSE '未知' END",
+    "risk": "中"
+  },
+  "OUTER_JOIN_+": {
+    "title": "(+) 外连接 → 标准 JOIN",
+    "rule": "Oracle 的 (+) 外连接语法改为标准 LEFT JOIN / RIGHT JOIN。(+) 在右侧表示左外连接",
+    "example_from": "SELECT * FROM a, b WHERE a.id = b.aid(+)",
+    "example_to": "SELECT * FROM a LEFT JOIN b ON a.id = b.aid",
+    "risk": "高"
+  },
+  "DUAL": {
+    "title": "DUAL 伪表",
+    "rule": "Oracle 的 FROM DUAL 在达梦/PG 中通常可直接省略",
+    "example_from": "SELECT 1 FROM DUAL",
+    "example_to": "SELECT 1",
+    "risk": "低"
+  },
+  "TO_DATE": {
+    "title": "TO_DATE 日期格式",
+    "rule": "TO_DATE 在多数国产库可用，但格式串需核对（如 'YYYY-MM-DD'），注意时区差异",
+    "example_from": "TO_DATE('2024-01-01','YYYY-MM-DD')",
+    "example_to": "TO_DATE('2024-01-01','YYYY-MM-DD')",
+    "risk": "中"
+  },
+  "CONNECT_BY": {
+    "title": "CONNECT BY → 递归 CTE",
+    "rule": "Oracle 层级查询 START WITH ... CONNECT BY 改写为 WITH RECURSIVE 递归 CTE，逻辑较复杂，建议人工确认",
+    "example_from": "SELECT * FROM t START WITH pid IS NULL CONNECT BY PRIOR id = pid",
+    "example_to": "WITH RECURSIVE cte AS (SELECT * FROM t WHERE pid IS NULL UNION ALL SELECT t.* FROM t JOIN cte ON t.pid = cte.id) SELECT * FROM cte",
+    "risk": "高"
+  }
+}

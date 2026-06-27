@@ -1,0 +1,25 @@
+# --- 千万别提交的东西 ---
+# 端侧模型文件巨大（20GB+），绝不进 git，各机器用 ollama pull 各下各的
+*.gguf
+*.bin
+*.safetensors
+models/
+
+# 真实环境变量（含本地 IP / 端口），只提交 .env.example
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# 系统/编辑器
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# 演示生成的迁移产物（按需，避免互相覆盖）
+output/
