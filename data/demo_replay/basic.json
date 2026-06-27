@@ -1,0 +1,215 @@
+[
+  {
+    "type": "think",
+    "step": 0,
+    "content": "收到迁移任务。第一步：读取并扫描 data/demo_project/legacy_oracle.sql，找出 Oracle 特有、目标库不支持的语法点。"
+  },
+  {
+    "type": "tool_call",
+    "step": 0,
+    "name": "read_file",
+    "args": {
+      "path": "data/demo_project/legacy_oracle.sql"
+    },
+    "id": "b0"
+  },
+  {
+    "type": "tool_result",
+    "step": 0,
+    "name": "read_file",
+    "result": {
+      "ok": true,
+      "path": "data/demo_project/legacy_oracle.sql",
+      "chars": 524
+    }
+  },
+  {
+    "type": "tool_call",
+    "step": 0,
+    "name": "grep_dialect",
+    "args": {
+      "sql": "-- 演示用：一段典型的 Oracle 老系统查询，故意埋了多个不兼容点\n-- 迁移目标：达梦 / 人大金仓（演示用 PostgreSQL 模拟）\n-- 埋的坑：NVL、ROWNUM、SYSDATE、DECODE、(+) 外连接、DUAL —— 覆盖低/中/高风险\n\n-- 1) 客户订单概览：NVL + DECODE + SYSDATE + (+) 外连接\nSELECT\n    c.cust_id,\n    NVL(c.cust_name, '未知客户')                     AS cust_name,\n    DECODE(o.status, 1, '已支付', 0, '待支付', '其他') AS status_text,\n    SYSDATE                                           AS query_time\nFROM customers c, orders o\nWHERE c.cust_id = o.cust_id(+)\n  AND ROWNUM <= 100;\n\n-- 2) 系统时间探测（DUAL 伪表）\nSELECT SYSDATE FROM DUAL;\n"
+    },
+    "id": "b1"
+  },
+  {
+    "type": "tool_result",
+    "step": 0,
+    "name": "grep_dialect",
+    "result": {
+      "count": 6,
+      "hits": [
+        {
+          "feature": "NVL",
+          "line": 8,
+          "risk": "低"
+        },
+        {
+          "feature": "DECODE",
+          "line": 9,
+          "risk": "中"
+        },
+        {
+          "feature": "SYSDATE",
+          "line": 10,
+          "risk": "低"
+        },
+        {
+          "feature": "OUTER_JOIN_+",
+          "line": 12,
+          "risk": "高"
+        },
+        {
+          "feature": "ROWNUM",
+          "line": 13,
+          "risk": "中"
+        },
+        {
+          "feature": "DUAL",
+          "line": 16,
+          "risk": "低"
+        }
+      ]
+    }
+  },
+  {
+    "type": "think",
+    "step": 1,
+    "content": "扫描到 6 个不兼容点。策略：按风险从低到高处理，先改确定性高的低/中风险项（NVL、SYSDATE、DUAL、DECODE、ROWNUM），把最棘手的高风险项 (+) 外连接留到最后单独攻坚，并在改完后请人工确认。先查知识库拿到改写规则。"
+  },
+  {
+    "type": "tool_call",
+    "step": 1,
+    "name": "query_migration_kb",
+    "args": {
+      "feature": "NVL"
+    },
+    "id": "b2"
+  },
+  {
+    "type": "tool_result",
+    "step": 1,
+    "name": "query_migration_kb",
+    "result": {
+      "found": true,
+      "feature": "NVL",
+      "title": "NVL → COALESCE",
+      "risk": "低"
+    }
+  },
+  {
+    "type": "tool_call",
+    "step": 1,
+    "name": "query_migration_kb",
+    "args": {
+      "feature": "DECODE"
+    },
+    "id": "b3"
+  },
+  {
+    "type": "tool_result",
+    "step": 1,
+    "name": "query_migration_kb",
+    "result": {
+      "found": true,
+      "feature": "DECODE",
+      "title": "DECODE → CASE WHEN",
+      "risk": "中"
+    }
+  },
+  {
+    "type": "think",
+    "step": 2,
+    "content": "低/中风险项已按知识库改写：NVL→COALESCE、DECODE→CASE WHEN、SYSDATE→CURRENT_TIMESTAMP、ROWNUM→LIMIT、省略 DUAL。现在攻最难的高风险项：Oracle 的 (+) 外连接。先尝试改写，然后立即跑验证。"
+  },
+  {
+    "type": "tool_call",
+    "step": 2,
+    "name": "run_validation",
+    "args": {
+      "sql": "SELECT\n    c.cust_id,\n    COALESCE(c.cust_name, '未知客户') AS cust_name,\n    CASE o.status WHEN 1 THEN '已支付' WHEN 0 THEN '待支付' ELSE '其他' END AS status_text,\n    CURRENT_TIMESTAMP AS query_time\nFROM customers c, orders o\nWHERE c.cust_id = o.cust_id(+)\nLIMIT 100;\n\nSELECT CURRENT_TIMESTAMP;"
+    },
+    "id": "b4"
+  },
+  {
+    "type": "tool_result",
+    "step": 2,
+    "name": "run_validation",
+    "result": {
+      "ok": false,
+      "engine": "static",
+      "error": "迁移后仍残留 Oracle 特有语法: OUTER_JOIN_+，目标库不支持 (+) 外连接，请改为标准 LEFT JOIN"
+    }
+  },
+  {
+    "type": "think",
+    "step": 3,
+    "content": "验证失败，报错说 (+) 外连接没改干净。我读懂了：要把逗号连接 `FROM a, b WHERE a.id = b.aid(+)` 改写为标准 `FROM a LEFT JOIN b ON a.id = b.aid`。（(+) 在右表侧 = 左外连接。）修正后重新验证。"
+  },
+  {
+    "type": "tool_call",
+    "step": 3,
+    "name": "run_validation",
+    "args": {
+      "sql": "SELECT\n    c.cust_id,\n    COALESCE(c.cust_name, '未知客户') AS cust_name,\n    CASE o.status WHEN 1 THEN '已支付' WHEN 0 THEN '待支付' ELSE '其他' END AS status_text,\n    CURRENT_TIMESTAMP AS query_time\nFROM customers c\nLEFT JOIN orders o ON c.cust_id = o.cust_id\nLIMIT 100;\n\nSELECT CURRENT_TIMESTAMP;"
+    },
+    "id": "b5"
+  },
+  {
+    "type": "tool_result",
+    "step": 3,
+    "name": "run_validation",
+    "result": {
+      "ok": true,
+      "engine": "static",
+      "msg": "静态语法校验通过，无残留 Oracle 语法"
+    }
+  },
+  {
+    "type": "think",
+    "step": 4,
+    "content": "(+) 外连接属高风险——连接方向会影响结果集语义，不能擅自定论。按规则暂停，请人工确认。"
+  },
+  {
+    "type": "tool_call",
+    "step": 4,
+    "name": "request_human_review",
+    "args": {
+      "item": "(+) 外连接 → LEFT JOIN",
+      "reason": "外连接方向影响结果集，需人工确认语义一致"
+    },
+    "id": "b6"
+  },
+  {
+    "type": "tool_result",
+    "step": 4,
+    "name": "request_human_review",
+    "result": {
+      "approved": true,
+      "note": "人工确认：语义一致，通过"
+    }
+  },
+  {
+    "type": "tool_call",
+    "step": 5,
+    "name": "write_file",
+    "args": {
+      "path": "output/migrated_basic.sql",
+      "content": "SELECT\n    c.cust_id,\n    COALESCE(c.cust_name, '未知客户') AS cust_name,\n    CASE o.status WHEN 1 THEN '已支付' WHEN 0 THEN '待支付' ELSE '其他' END AS status_text,\n    CURRENT_TIMESTAMP AS query_time\nFROM customers c\nLEFT JOIN orders o ON c.cust_id = o.cust_id\nLIMIT 100;\n\nSELECT CURRENT_TIMESTAMP;"
+    },
+    "id": "b7"
+  },
+  {
+    "type": "tool_result",
+    "step": 5,
+    "name": "write_file",
+    "result": {
+      "ok": true,
+      "path": "output/migrated_basic.sql"
+    }
+  },
+  {
+    "type": "done",
+    "content": "#### ✅ 迁移后 SQL（达梦 / 人大金仓兼容）\n```sql\nSELECT\n    c.cust_id,\n    COALESCE(c.cust_name, '未知客户') AS cust_name,\n    CASE o.status WHEN 1 THEN '已支付' WHEN 0 THEN '待支付' ELSE '其他' END AS status_text,\n    CURRENT_TIMESTAMP AS query_time\nFROM customers c\nLEFT JOIN orders o ON c.cust_id = o.cust_id\nLIMIT 100;\n\nSELECT CURRENT_TIMESTAMP;\n```\n\n### 📋 迁移报告\n| 原 Oracle 语法 | 迁移为 | 风险 | 处理方式 |\n|---|---|---|---|\n| `NVL(...)` | `COALESCE(...)` | 🟢 低 | 知识库直接改写 |\n| `DECODE(...)` | `CASE WHEN` | 🟡 中 | 条件表达式改写 |\n| `SYSDATE` | `CURRENT_TIMESTAMP` | 🟢 低 | 知识库直接改写 |\n| `(+)` 外连接 | `LEFT JOIN` | 🔴 高 | **验证失败 → 自修复 → 人工确认** |\n| `ROWNUM <= 100` | `LIMIT 100` | 🟡 中 | 分页语义改写 |\n| `FROM DUAL` | （省略） | 🟢 低 | 国产库无需伪表 |\n\n**6 项不兼容点全部迁移完成并通过验证**；其中 1 项高风险经「验证失败 → 读报错 → 自修复 → 人工确认」闭环处理。\n全程代码未出内网。"
+  }
+]
