@@ -8,6 +8,5 @@ python-dotenv>=1.0.0
 psycopg2-binary>=2.9.0
 sqlparse>=0.4.0
 
-# 前端（B 选用其一，二选一即可，别都装）
-# streamlit>=1.30.0      # 最快出可视化界面
-# fastapi + uvicorn      # 想做更自定义的前后端分离
+# 前端（演示界面，web/app.py 用 Streamlit）
+streamlit>=1.30.0
