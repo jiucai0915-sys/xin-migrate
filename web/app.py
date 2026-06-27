@@ -213,7 +213,9 @@ with left:
     if os.path.exists(scenario["sql"]):
         with open(scenario["sql"], "r", encoding="utf-8") as f:
             sql_text = f.read()
-    st.code(sql_text or "（未找到演示 SQL）", language="sql")
+    st.markdown("**📄 原始 SQL**")
+    with st.container(height=480):   # 与右侧思考链等高、对齐+可滚动（合入 A 的改进）
+        st.code(sql_text or "（未找到演示 SQL）", language="sql")
 
     # key 绑定场景名：切换场景时任务描述自动刷新为该场景默认值（否则 Streamlit 会粘住旧值）
     task = st.text_input("迁移任务", value=scenario["task"], key=f"task_{scenario_name}")
