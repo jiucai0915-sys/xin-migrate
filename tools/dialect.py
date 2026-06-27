@@ -15,6 +15,10 @@ DIALECT_PATTERNS = {
     "DUAL":           (r"\bFROM\s+DUAL\b",       "Oracle 伪表 DUAL，多数国产库可省略", "低"),
     "TO_DATE":        (r"\bTO_DATE\s*\(",        "Oracle 日期转换，需核对目标库格式", "中"),
     "CONNECT_BY":     (r"\bCONNECT\s+BY\b",      "Oracle 层级查询，需改写为递归 CTE", "高"),
+    "INSTR":          (r"\bINSTR\s*\(",          "Oracle 字符串查找，需核对目标库 INSTR/POSITION 语义", "中"),
+    "SEQ_NEXTVAL":    (r"\b\w+\.NEXTVAL\b",       "Oracle 序列取值，需改为 NEXTVAL('seq') 或目标库序列语法", "中"),
+    "MERGE_INTO":     (r"\bMERGE\s+INTO\b",       "Oracle MERGE 合并语句，需核对目标库兼容性或改为 UPSERT", "高"),
+    "ROWID":          (r"\bROWID\b",              "Oracle 物理行标识 ROWID，国产库通常无对应，需改用主键", "高"),
 }
 
 

@@ -54,5 +54,33 @@
     "example_from": "SELECT * FROM t START WITH pid IS NULL CONNECT BY PRIOR id = pid",
     "example_to": "WITH RECURSIVE cte AS (SELECT * FROM t WHERE pid IS NULL UNION ALL SELECT t.* FROM t JOIN cte ON t.pid = cte.id) SELECT * FROM cte",
     "risk": "高"
+  },
+  "INSTR": {
+    "title": "INSTR 字符串查找",
+    "rule": "Oracle INSTR(str, sub) 返回位置；达梦多兼容 INSTR，PG 需用 POSITION(sub IN str) 或 STRPOS(str, sub)，注意从1开始计数",
+    "example_from": "INSTR(name, 'A')",
+    "example_to": "POSITION('A' IN name)",
+    "risk": "中"
+  },
+  "SEQ_NEXTVAL": {
+    "title": "序列 SEQ.NEXTVAL",
+    "rule": "Oracle 的 seq.NEXTVAL / seq.CURRVAL 改为目标库序列语法。PG/达梦用 NEXTVAL('seq')、CURRVAL('seq')",
+    "example_from": "SELECT order_seq.NEXTVAL FROM DUAL",
+    "example_to": "SELECT NEXTVAL('order_seq')",
+    "risk": "中"
+  },
+  "MERGE_INTO": {
+    "title": "MERGE INTO → UPSERT",
+    "rule": "Oracle MERGE INTO ... WHEN MATCHED/NOT MATCHED 合并语句。达梦多兼容；PG 建议改为 INSERT ... ON CONFLICT DO UPDATE。逻辑复杂，建议人工确认",
+    "example_from": "MERGE INTO t USING s ON (t.id=s.id) WHEN MATCHED THEN UPDATE ... WHEN NOT MATCHED THEN INSERT ...",
+    "example_to": "INSERT INTO t (...) SELECT ... FROM s ON CONFLICT (id) DO UPDATE SET ...",
+    "risk": "高"
+  },
+  "ROWID": {
+    "title": "ROWID 物理行标识",
+    "rule": "Oracle 的 ROWID 是物理行地址，国产库通常无等价物。需改用业务主键定位，可能涉及业务逻辑调整，务必人工确认",
+    "example_from": "DELETE FROM t WHERE ROWID = :rid",
+    "example_to": "DELETE FROM t WHERE id = :id",
+    "risk": "高"
   }
 }
