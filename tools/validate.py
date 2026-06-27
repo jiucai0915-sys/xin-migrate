@@ -40,14 +40,37 @@ def _static_check(sql: str) -> dict:
     # 如果迁移后还残留 Oracle 特有语法 = 没改干净 = 验证失败
     leftover = grep_dialect({"sql": sql})
     if leftover["count"] > 0:
-        feats = ", ".join(h["feature"] for h in leftover["hits"])
+        feats = ", ".join(sorted(set(h["feature"] for h in leftover["hits"])))
+        # 附上每个残留点的具体修复指令，帮端侧弱模型一次改对（强编排兜底）
+        hints = "；".join(
+            f"{f}: {_FIX_HINTS[f]}" for f in sorted(set(h["feature"] for h in leftover["hits"]))
+            if f in _FIX_HINTS
+        )
         return {
             "ok": False,
             "engine": "static",
-            "error": f"迁移后仍残留 Oracle 特有语法: {feats}，目标库不支持，请继续改写",
+            "error": f"迁移后仍残留 Oracle 特有语法: {feats}，目标库不支持。"
+                     f"请重写完整 SQL 并彻底改掉这些点。修复指令 → {hints}",
             "leftover": leftover["hits"],
         }
     return {"ok": True, "engine": "static", "msg": "静态语法校验通过，无残留 Oracle 语法"}
+
+
+# 残留语法 → 具体修复指令（给弱模型明确的"怎么改"，提高一次改对率）
+_FIX_HINTS = {
+    "NVL": "把 NVL(a,b) 改成 COALESCE(a,b)",
+    "ROWNUM": "删除 WHERE/AND 里的 ROWNUM<=N 条件，改为在 SQL 末尾(分号前)加 LIMIT N",
+    "SYSDATE": "把 SYSDATE 改成 CURRENT_TIMESTAMP",
+    "DECODE": "把 DECODE(x,v1,r1,...,def) 改成 CASE x WHEN v1 THEN r1 ... ELSE def END",
+    "OUTER_JOIN_+": "把 FROM a,b WHERE a.id=b.aid(+) 改成 FROM a LEFT JOIN b ON a.id=b.aid",
+    "DUAL": "直接删除 FROM DUAL（含 FROM 关键字），只保留 SELECT 表达式",
+    "TO_DATE": "保留 TO_DATE，但核对日期格式串",
+    "CONNECT_BY": "把 START WITH...CONNECT BY 改写为 WITH RECURSIVE 递归 CTE",
+    "INSTR": "把 INSTR(str,sub) 改成 POSITION(sub IN str)",
+    "SEQ_NEXTVAL": "把 seq.NEXTVAL 改成 NEXTVAL('seq')",
+    "MERGE_INTO": "把 MERGE INTO 改成 INSERT ... ON CONFLICT DO UPDATE",
+    "ROWID": "去掉 ROWID，改用业务主键定位",
+}
 
 
 def request_human_review(args: dict) -> dict:

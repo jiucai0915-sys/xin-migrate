@@ -23,3 +23,6 @@ venv/
 
 # 演示生成的迁移产物（按需，避免互相覆盖）
 output/
+
+# Agent 运行时生成的迁移产物
+*_migrated.sql
