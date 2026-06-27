@@ -55,7 +55,9 @@ with left:
     if os.path.exists(DEMO_SQL_PATH):
         with open(DEMO_SQL_PATH, "r", encoding="utf-8") as f:
             sql_text = f.read()
-    st.code(sql_text or "（未找到演示 SQL）", language="sql")
+    st.markdown("**📄 原始 SQL**")
+    with st.container(height=480):              # 与右侧思考链等高，对齐 + 可滚动
+        st.code(sql_text or "（未找到演示 SQL）", language="sql")
     task = st.text_input("迁移任务", value="把 data/demo_project 的 Oracle SQL 迁移到达梦")
     start = st.button("🚀 开始迁移", type="primary", use_container_width=True)
 
