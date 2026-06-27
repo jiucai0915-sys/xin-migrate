@@ -61,8 +61,9 @@ with left:
 
 with right:
     st.subheader("② Agent 实时工作过程")
-    highlight_box = st.container()   # 自修复高光区（置顶醒目）
-    timeline_box = st.container()    # 思考链时间线
+    highlight_box = st.container()             # 自修复高光区（置顶醒目，不滚动）
+    st.markdown("**🧠 思考链**")
+    timeline_box = st.container(height=480)     # 思考链时间线：固定高度+自动滚动，容纳更多信息
 
 # 结果区（底部）
 st.divider()
