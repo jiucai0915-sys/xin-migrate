@@ -82,5 +82,19 @@
     "example_from": "DELETE FROM t WHERE ROWID = :rid",
     "example_to": "DELETE FROM t WHERE id = :id",
     "risk": "高"
+  },
+  "SUBSTR": {
+    "title": "SUBSTR 字符串截取",
+    "rule": "Oracle SUBSTR(str, pos, len) 在达梦/金仓多数直接兼容；迁到 PostgreSQL 可用 SUBSTRING(str FROM pos FOR len)。注意位置从 1 开始计数，负数起始位置（从末尾算）的语义需逐一核对",
+    "example_from": "SUBSTR(phone, 1, 3)",
+    "example_to": "SUBSTR(phone, 1, 3)",
+    "risk": "低"
+  },
+  "CONCAT": {
+    "title": "|| 字符串拼接",
+    "rule": "Oracle/达梦/金仓/PG 都支持 || 拼接，符号无需改。但有空值语义陷阱：Oracle 中 NULL||'x' 得 'x'（忽略 NULL），PG 中任一侧为 NULL 则整体为 NULL。涉及可空列拼接时用 COALESCE 包裹，避免结果变 NULL",
+    "example_from": "first_name || ' ' || last_name",
+    "example_to": "COALESCE(first_name,'') || ' ' || COALESCE(last_name,'')",
+    "risk": "中"
   }
 }
