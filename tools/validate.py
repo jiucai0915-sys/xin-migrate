@@ -9,41 +9,46 @@ from agent.config import TARGET_DB, VALIDATE_DB_DSN
 def run_validation(args: dict) -> dict:
     sql = args.get("sql", "")
 
-    # ① 优先：连真实数据库做 EXPLAIN/语法校验
+    # ① 没装驱动 → 直接静态校验（离线可用）
     try:
-        import psycopg2  # noqa
+        import psycopg2
+    except ImportError:
+        return _static_check(sql)
+
+    # ② 连不上目标库 → 降级静态校验（演示机常态：装了驱动但库没起）
+    #    关键：要把"连不上库"和"SQL 真报错"分开，否则会把连接超时误当成自修复信号
+    try:
         conn = psycopg2.connect(VALIDATE_DB_DSN, connect_timeout=2)
+    except Exception:
+        return _static_check(sql)
+
+    # ③ 连上了 → 用 EXPLAIN 做真·语法校验；SQL 报错才是自修复信号
+    try:
         cur = conn.cursor()
-        # 只校验语法、不真正执行：用 EXPLAIN 或 prepared statement
         for stmt in [s for s in sql.split(";") if s.strip()]:
             cur.execute("EXPLAIN " + stmt)
-        conn.close()
         return {"ok": True, "engine": TARGET_DB, "msg": "语法校验通过"}
-    except ImportError:
-        pass  # 没装驱动，走静态校验
     except Exception as e:
-        # 真实库报错 —— 这正是喂给 Agent 自修复的关键信息
         return {"ok": False, "engine": TARGET_DB, "error": str(e)}
-
-    # ② 退化：本地静态语法校验（保证离线/无库也能演自修复）
-    return _static_check(sql)
+    finally:
+        conn.close()
 
 
 def _static_check(sql: str) -> dict:
     """用 sqlparse 做基础语法检查 + 残留 Oracle 语法检测。"""
     import sqlparse
-    from tools.dialect import grep_dialect
+    from tools.dialect import grep_dialect, COMPATIBLE_FEATURES
 
     if not sqlparse.parse(sql):
         return {"ok": False, "engine": "static", "error": "SQL 无法解析"}
 
-    # 如果迁移后还残留 Oracle 特有语法 = 没改干净 = 验证失败
-    leftover = grep_dialect({"sql": sql})
-    if leftover["count"] > 0:
-        feats = ", ".join(sorted(set(h["feature"] for h in leftover["hits"])))
-        # 附上每个残留点的具体修复指令，帮端侧弱模型一次改对（强编排兜底）
+    # 只有"必须改掉"的不兼容语法才算残留；兼容项(SUBSTR/||)扫出来仅提示，不判失败
+    all_hits = grep_dialect({"sql": sql})["hits"]
+    leftover = [h for h in all_hits if h["feature"] not in COMPATIBLE_FEATURES]
+    if leftover:
+        feats = ", ".join(sorted(set(h["feature"] for h in leftover)))
         hints = "；".join(
-            f"{f}: {_FIX_HINTS[f]}" for f in sorted(set(h["feature"] for h in leftover["hits"]))
+            f"{f}: {_FIX_HINTS[f]}" for f in sorted(set(h["feature"] for h in leftover))
             if f in _FIX_HINTS
         )
         return {
@@ -51,7 +56,7 @@ def _static_check(sql: str) -> dict:
             "engine": "static",
             "error": f"迁移后仍残留 Oracle 特有语法: {feats}，目标库不支持。"
                      f"请重写完整 SQL 并彻底改掉这些点。修复指令 → {hints}",
-            "leftover": leftover["hits"],
+            "leftover": leftover,
         }
     return {"ok": True, "engine": "static", "msg": "静态语法校验通过，无残留 Oracle 语法"}
 
@@ -70,6 +75,8 @@ _FIX_HINTS = {
     "SEQ_NEXTVAL": "把 seq.NEXTVAL 改成 NEXTVAL('seq')",
     "MERGE_INTO": "把 MERGE INTO 改成 INSERT ... ON CONFLICT DO UPDATE",
     "ROWID": "去掉 ROWID，改用业务主键定位",
+    "SUBSTR": "SUBSTR 多数国产库兼容；迁 PG 可用 SUBSTRING(str FROM pos FOR len)",
+    "CONCAT": "|| 拼接保留；可空列用 COALESCE(col,'') 包裹避免 NULL 传染",
 }
 
 

@@ -19,7 +19,14 @@ DIALECT_PATTERNS = {
     "SEQ_NEXTVAL":    (r"\b\w+\.NEXTVAL\b",       "Oracle 序列取值，需改为 NEXTVAL('seq') 或目标库序列语法", "中"),
     "MERGE_INTO":     (r"\bMERGE\s+INTO\b",       "Oracle MERGE 合并语句，需核对目标库兼容性或改为 UPSERT", "高"),
     "ROWID":          (r"\bROWID\b",              "Oracle 物理行标识 ROWID，国产库通常无对应，需改用主键", "高"),
+    # 以下为"兼容但需注意"项：达梦/金仓多数兼容，仅提示语义差异，不应判为迁移失败
+    "SUBSTR":         (r"\bSUBSTR\s*\(",          "字符串截取，多数国产库兼容；迁 PG 可用 SUBSTRING，核对位置/负数语义", "低"),
+    "CONCAT":         (r"\|\|",                   "字符串 || 拼接，达梦/PG 兼容；注意 NULL 拼接语义差异", "中"),
 }
+
+# 「兼容但提示」的语法点：grep_dialect 会扫出来提示，但它们在目标库合法，
+# 不应被 run_validation 当作"残留 Oracle 语法"而判迁移失败（否则自修复死循环）。
+COMPATIBLE_FEATURES = {"SUBSTR", "CONCAT"}
 
 
 def _strip_comments(sql: str) -> str:
