@@ -14,11 +14,23 @@ import streamlit as st
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent.loop import run_events  # noqa: E402
+from agent.demo_replay import replay_events  # noqa: E402
 
 st.set_page_config(page_title="信迁 Agent", layout="wide")
 
 st.title("信迁 Agent · 国产化迁移")
 st.caption("🔌 全程内网离线运行 —— 代码不出域，迁移自动化")
+
+# 演示模式开关：现场推荐用"离线回放"保证稳定复现；联调时用"实时模型"
+with st.sidebar:
+    st.header("运行模式")
+    mode = st.radio(
+        "选择",
+        ["离线回放（演示推荐·稳定）", "实时端侧模型（需 Ollama）"],
+        index=0,
+    )
+    replay_delay = st.slider("回放每步停顿(秒)", 0.0, 2.0, 0.8, 0.1)
+    st.caption("现场演示用「离线回放」可 100% 复现『失败→自修复』高光，不受模型/网络影响。")
 
 DEMO_SQL_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -46,8 +58,13 @@ with right:
 
 if start:
     repair_failed = None  # 暂存上一次验证失败，用于高亮"失败→修复"
+    # 按模式选择事件源
+    if mode.startswith("离线回放"):
+        events = replay_events(task, delay=replay_delay)
+    else:
+        events = run_events(task)
     with right:
-        for ev in run_events(task):
+        for ev in events:
             t = ev["type"]
 
             if t == "think":

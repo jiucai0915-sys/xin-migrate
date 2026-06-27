@@ -18,8 +18,21 @@ DIALECT_PATTERNS = {
 }
 
 
+def _strip_comments(sql: str) -> str:
+    """把 SQL 注释替换成等长空白（保留换行），这样扫描不误匹配注释，且行号不变。"""
+    # 行注释 -- ...（到行尾）
+    def _blank(m):
+        return re.sub(r"[^\n]", " ", m.group(0))
+
+    sql = re.sub(r"--[^\n]*", _blank, sql)
+    # 块注释 /* ... */（可跨行）
+    sql = re.sub(r"/\*.*?\*/", _blank, sql, flags=re.DOTALL)
+    return sql
+
+
 def grep_dialect(args: dict) -> dict:
-    sql = args.get("sql", "")
+    raw = args.get("sql", "")
+    sql = _strip_comments(raw)  # 先剥离注释，避免误匹配注释里的关键字
     hits = []
     for name, (pattern, desc, risk) in DIALECT_PATTERNS.items():
         for m in re.finditer(pattern, sql, flags=re.IGNORECASE):
