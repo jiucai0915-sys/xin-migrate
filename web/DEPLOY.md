@@ -85,6 +85,13 @@ KB 新增了 `SUBSTR`、`CONCAT`（`||`拼接）两条规则。要让它们在**
 
 > 注意 KB 的键要与 dialect 的 feature 名一致（`query_migration_kb` 会把 feature 转大写匹配）：`SUBSTR`、`CONCAT`。
 
+并建议在 `tools/validate.py` 的 `_FIX_HINTS` 里也各加一条（静态校验失败时会把"怎么改"喂给弱模型，提高一次改对率）：
+
+```python
+"SUBSTR": "SUBSTR 多数国产库兼容；迁 PG 可用 SUBSTRING(str FROM pos FOR len)",
+"CONCAT": "|| 拼接保留；可空列用 COALESCE(col,'') 包裹避免 NULL 传染",
+```
+
 ---
 
 ## 6. 上台前

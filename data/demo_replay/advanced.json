@@ -37,42 +37,63 @@
     "step": 0,
     "name": "grep_dialect",
     "result": {
-      "count": 7,
+      "count": 8,
       "hits": [
         {
-          "feature": "CONNECT_BY",
-          "line": 8,
-          "risk": "高"
-        },
-        {
-          "feature": "SEQ_NEXTVAL",
-          "line": 12,
-          "risk": "中"
+          "feature": "NVL",
+          "line": 28,
+          "matched": "NVL(",
+          "desc": "Oracle 空值函数，需改为 COALESCE",
+          "risk": "低"
         },
         {
           "feature": "DUAL",
           "line": 12,
+          "matched": "FROM DUAL",
+          "desc": "Oracle 伪表 DUAL，多数国产库可省略",
           "risk": "低"
         },
         {
-          "feature": "MERGE_INTO",
-          "line": 15,
-          "risk": "高"
-        },
-        {
-          "feature": "ROWID",
-          "line": 22,
+          "feature": "CONNECT_BY",
+          "line": 9,
+          "matched": "CONNECT BY",
+          "desc": "Oracle 层级查询，需改写为递归 CTE",
           "risk": "高"
         },
         {
           "feature": "INSTR",
           "line": 28,
+          "matched": "INSTR(",
+          "desc": "Oracle 字符串查找，需核对目标库 INSTR/POSITION 语义",
           "risk": "中"
         },
         {
-          "feature": "NVL",
-          "line": 28,
-          "risk": "低"
+          "feature": "SEQ_NEXTVAL",
+          "line": 12,
+          "matched": "order_seq.NEXTVAL",
+          "desc": "Oracle 序列取值，需改为 NEXTVAL('seq') 或目标库序列语法",
+          "risk": "中"
+        },
+        {
+          "feature": "MERGE_INTO",
+          "line": 15,
+          "matched": "MERGE INTO",
+          "desc": "Oracle MERGE 合并语句，需核对目标库兼容性或改为 UPSERT",
+          "risk": "高"
+        },
+        {
+          "feature": "ROWID",
+          "line": 22,
+          "matched": "ROWID",
+          "desc": "Oracle 物理行标识 ROWID，国产库通常无对应，需改用主键",
+          "risk": "高"
+        },
+        {
+          "feature": "ROWID",
+          "line": 23,
+          "matched": "ROWID",
+          "desc": "Oracle 物理行标识 ROWID，国产库通常无对应，需改用主键",
+          "risk": "高"
         }
       ]
     }
@@ -80,7 +101,7 @@
   {
     "type": "think",
     "step": 1,
-    "content": "进阶场景高风险扎堆：层级查询(CONNECT BY)、合并(MERGE)、物理行删除(ROWID) 都是迁移里最难啃的。策略：低/中风险按知识库直接改；3 个高风险项逐一改写 + 验证，且全部请人工确认。先查最难的 CONNECT BY。"
+    "content": "扫描到 8 处不兼容语法。进阶场景高风险扎堆：层级查询(CONNECT BY)、合并(MERGE)、物理行删除(ROWID) 都是迁移里最难啃的。策略：低/中风险按知识库直接改；3 个高风险项逐一改写 + 验证，且全部请人工确认。先查最难的 CONNECT BY。"
   },
   {
     "type": "tool_call",

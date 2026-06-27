@@ -37,36 +37,55 @@
     "step": 0,
     "name": "grep_dialect",
     "result": {
-      "count": 6,
+      "count": 7,
       "hits": [
         {
           "feature": "NVL",
           "line": 8,
+          "matched": "NVL(",
+          "desc": "Oracle 空值函数，需改为 COALESCE",
           "risk": "低"
         },
         {
-          "feature": "DECODE",
-          "line": 9,
+          "feature": "ROWNUM",
+          "line": 13,
+          "matched": "ROWNUM",
+          "desc": "Oracle 行号，需改为 LIMIT/分页",
           "risk": "中"
         },
         {
           "feature": "SYSDATE",
           "line": 10,
+          "matched": "SYSDATE",
+          "desc": "Oracle 当前时间，需改为 CURRENT_TIMESTAMP",
           "risk": "低"
+        },
+        {
+          "feature": "SYSDATE",
+          "line": 16,
+          "matched": "SYSDATE",
+          "desc": "Oracle 当前时间，需改为 CURRENT_TIMESTAMP",
+          "risk": "低"
+        },
+        {
+          "feature": "DECODE",
+          "line": 9,
+          "matched": "DECODE(",
+          "desc": "Oracle 条件函数，需改为 CASE WHEN",
+          "risk": "中"
         },
         {
           "feature": "OUTER_JOIN_+",
           "line": 12,
+          "matched": "(+)",
+          "desc": "Oracle (+) 外连接语法，需改为标准 LEFT/RIGHT JOIN",
           "risk": "高"
-        },
-        {
-          "feature": "ROWNUM",
-          "line": 13,
-          "risk": "中"
         },
         {
           "feature": "DUAL",
           "line": 16,
+          "matched": "FROM DUAL",
+          "desc": "Oracle 伪表 DUAL，多数国产库可省略",
           "risk": "低"
         }
       ]
@@ -75,7 +94,7 @@
   {
     "type": "think",
     "step": 1,
-    "content": "扫描到 6 个不兼容点。策略：按风险从低到高处理，先改确定性高的低/中风险项（NVL、SYSDATE、DUAL、DECODE、ROWNUM），把最棘手的高风险项 (+) 外连接留到最后单独攻坚，并在改完后请人工确认。先查知识库拿到改写规则。"
+    "content": "扫描到 7 处不兼容语法（6 类）。策略：按风险从低到高处理，先改确定性高的低/中风险项（NVL、SYSDATE、DUAL、DECODE、ROWNUM），把最棘手的高风险项 (+) 外连接留到最后单独攻坚，并在改完后请人工确认。先查知识库拿到改写规则。"
   },
   {
     "type": "tool_call",
@@ -210,6 +229,6 @@
   },
   {
     "type": "done",
-    "content": "#### ✅ 迁移后 SQL（达梦 / 人大金仓兼容）\n```sql\nSELECT\n    c.cust_id,\n    COALESCE(c.cust_name, '未知客户') AS cust_name,\n    CASE o.status WHEN 1 THEN '已支付' WHEN 0 THEN '待支付' ELSE '其他' END AS status_text,\n    CURRENT_TIMESTAMP AS query_time\nFROM customers c\nLEFT JOIN orders o ON c.cust_id = o.cust_id\nLIMIT 100;\n\nSELECT CURRENT_TIMESTAMP;\n```\n\n### 📋 迁移报告\n| 原 Oracle 语法 | 迁移为 | 风险 | 处理方式 |\n|---|---|---|---|\n| `NVL(...)` | `COALESCE(...)` | 🟢 低 | 知识库直接改写 |\n| `DECODE(...)` | `CASE WHEN` | 🟡 中 | 条件表达式改写 |\n| `SYSDATE` | `CURRENT_TIMESTAMP` | 🟢 低 | 知识库直接改写 |\n| `(+)` 外连接 | `LEFT JOIN` | 🔴 高 | **验证失败 → 自修复 → 人工确认** |\n| `ROWNUM <= 100` | `LIMIT 100` | 🟡 中 | 分页语义改写 |\n| `FROM DUAL` | （省略） | 🟢 低 | 国产库无需伪表 |\n\n**6 项不兼容点全部迁移完成并通过验证**；其中 1 项高风险经「验证失败 → 读报错 → 自修复 → 人工确认」闭环处理。\n全程代码未出内网。"
+    "content": "#### ✅ 迁移后 SQL（达梦 / 人大金仓兼容）\n```sql\nSELECT\n    c.cust_id,\n    COALESCE(c.cust_name, '未知客户') AS cust_name,\n    CASE o.status WHEN 1 THEN '已支付' WHEN 0 THEN '待支付' ELSE '其他' END AS status_text,\n    CURRENT_TIMESTAMP AS query_time\nFROM customers c\nLEFT JOIN orders o ON c.cust_id = o.cust_id\nLIMIT 100;\n\nSELECT CURRENT_TIMESTAMP;\n```\n\n### 📋 迁移报告\n| 原 Oracle 语法 | 迁移为 | 风险 | 处理方式 |\n|---|---|---|---|\n| `NVL(...)` | `COALESCE(...)` | 🟢 低 | 知识库直接改写 |\n| `DECODE(...)` | `CASE WHEN` | 🟡 中 | 条件表达式改写 |\n| `SYSDATE` | `CURRENT_TIMESTAMP` | 🟢 低 | 知识库直接改写 |\n| `(+)` 外连接 | `LEFT JOIN` | 🔴 高 | **验证失败 → 自修复 → 人工确认** |\n| `ROWNUM <= 100` | `LIMIT 100` | 🟡 中 | 分页语义改写 |\n| `FROM DUAL` | （省略） | 🟢 低 | 国产库无需伪表 |\n\n**7 处不兼容点（6 类语法）全部迁移完成并通过验证**；其中 1 项高风险经「验证失败 → 读报错 → 自修复 → 人工确认」闭环处理。\n全程代码未出内网。"
   }
 ]

@@ -7,8 +7,7 @@ backgroundColor = "#0B0F14"         # 主背景（近黑深蓝）
 secondaryBackgroundColor = "#141B24" # 侧栏/卡片背景
 textColor = "#E6EDF3"
 
-[server]
-headless = true
-
+# 不要在这里设 server.headless=true：演示机跑 `streamlit run` 时要自动弹出浏览器。
+# 无头/自动化测试用命令行 --server.headless true 传入即可。
 [browser]
 gatherUsageStats = false

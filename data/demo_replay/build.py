@@ -14,9 +14,13 @@
 """
 import json
 import os
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..")))  # 仓库根，便于 import tools
 DEMO_DIR = os.path.join(HERE, "..", "demo_project")
+
+from tools.dialect import grep_dialect  # noqa: E402  用真实工具产扫描结果，保证回放数字不穿帮
 
 
 def _read(path: str) -> str:
@@ -33,6 +37,7 @@ def _read(path: str) -> str:
 # ======================================================================
 
 BASIC_SRC = _read(os.path.join(DEMO_DIR, "legacy_oracle.sql"))
+BASIC_GREP = grep_dialect({"sql": BASIC_SRC})   # 真实扫描结果（count/hits 与实时工具一致）
 
 # 第一次改写（错误）：低/中风险都改了，但最难的 (+) 外连接没改干净 → 验证失败
 BASIC_ATTEMPT_BAD = """SELECT
@@ -73,7 +78,7 @@ BASIC_REPORT = """#### ✅ 迁移后 SQL（达梦 / 人大金仓兼容）
 | `ROWNUM <= 100` | `LIMIT 100` | 🟡 中 | 分页语义改写 |
 | `FROM DUAL` | （省略） | 🟢 低 | 国产库无需伪表 |
 
-**6 项不兼容点全部迁移完成并通过验证**；其中 1 项高风险经「验证失败 → 读报错 → 自修复 → 人工确认」闭环处理。
+**7 处不兼容点（6 类语法）全部迁移完成并通过验证**；其中 1 项高风险经「验证失败 → 读报错 → 自修复 → 人工确认」闭环处理。
 全程代码未出内网。"""
 
 BASIC = [
@@ -86,18 +91,10 @@ BASIC = [
 
     {"type": "tool_call", "step": 0, "name": "grep_dialect",
      "args": {"sql": BASIC_SRC}, "id": "b1"},
-    {"type": "tool_result", "step": 0, "name": "grep_dialect",
-     "result": {"count": 6, "hits": [
-         {"feature": "NVL", "line": 8, "risk": "低"},
-         {"feature": "DECODE", "line": 9, "risk": "中"},
-         {"feature": "SYSDATE", "line": 10, "risk": "低"},
-         {"feature": "OUTER_JOIN_+", "line": 12, "risk": "高"},
-         {"feature": "ROWNUM", "line": 13, "risk": "中"},
-         {"feature": "DUAL", "line": 16, "risk": "低"},
-     ]}},
+    {"type": "tool_result", "step": 0, "name": "grep_dialect", "result": BASIC_GREP},
 
     {"type": "think", "step": 1,
-     "content": "扫描到 6 个不兼容点。策略：按风险从低到高处理，先改确定性高的低/中风险项（NVL、SYSDATE、DUAL、DECODE、ROWNUM），"
+     "content": f"扫描到 {BASIC_GREP['count']} 处不兼容语法（6 类）。策略：按风险从低到高处理，先改确定性高的低/中风险项（NVL、SYSDATE、DUAL、DECODE、ROWNUM），"
                 "把最棘手的高风险项 (+) 外连接留到最后单独攻坚，并在改完后请人工确认。先查知识库拿到改写规则。"},
     {"type": "tool_call", "step": 1, "name": "query_migration_kb", "args": {"feature": "NVL"}, "id": "b2"},
     {"type": "tool_result", "step": 1, "name": "query_migration_kb",
@@ -147,6 +144,7 @@ BASIC = [
 # ======================================================================
 
 ADV_SRC = _read(os.path.join(DEMO_DIR, "legacy_oracle_advanced.sql"))
+ADV_GREP = grep_dialect({"sql": ADV_SRC})   # 真实扫描结果
 
 # 第一次改写（错误）：套了个 CTE 壳，但里面还留着 START WITH ... CONNECT BY，没真正拆解 → 验证失败
 ADV_ATTEMPT_BAD = """WITH org AS (
@@ -230,19 +228,10 @@ ADVANCED = [
      "result": {"ok": True, "path": "data/demo_project/legacy_oracle_advanced.sql", "chars": len(ADV_SRC)}},
 
     {"type": "tool_call", "step": 0, "name": "grep_dialect", "args": {"sql": ADV_SRC}, "id": "a1"},
-    {"type": "tool_result", "step": 0, "name": "grep_dialect",
-     "result": {"count": 7, "hits": [
-         {"feature": "CONNECT_BY", "line": 8, "risk": "高"},
-         {"feature": "SEQ_NEXTVAL", "line": 12, "risk": "中"},
-         {"feature": "DUAL", "line": 12, "risk": "低"},
-         {"feature": "MERGE_INTO", "line": 15, "risk": "高"},
-         {"feature": "ROWID", "line": 22, "risk": "高"},
-         {"feature": "INSTR", "line": 28, "risk": "中"},
-         {"feature": "NVL", "line": 28, "risk": "低"},
-     ]}},
+    {"type": "tool_result", "step": 0, "name": "grep_dialect", "result": ADV_GREP},
 
     {"type": "think", "step": 1,
-     "content": "进阶场景高风险扎堆：层级查询(CONNECT BY)、合并(MERGE)、物理行删除(ROWID) 都是迁移里最难啃的。"
+     "content": f"扫描到 {ADV_GREP['count']} 处不兼容语法。进阶场景高风险扎堆：层级查询(CONNECT BY)、合并(MERGE)、物理行删除(ROWID) 都是迁移里最难啃的。"
                 "策略：低/中风险按知识库直接改；3 个高风险项逐一改写 + 验证，且全部请人工确认。先查最难的 CONNECT BY。"},
     {"type": "tool_call", "step": 1, "name": "query_migration_kb", "args": {"feature": "CONNECT_BY"}, "id": "a2"},
     {"type": "tool_result", "step": 1, "name": "query_migration_kb",
