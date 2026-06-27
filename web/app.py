@@ -60,7 +60,7 @@ def inject_css():
         /* 顶部断网徽标：呼吸式辉光 */
         .xm-net {
             display:inline-flex; align-items:center; gap:8px;
-            background: rgba(10,125,50,.18); color:#7CF2B8;
+            background:#0c3a22; color:#7CF2B8;
             border:1px solid rgba(0,224,164,.55); border-radius:999px;
             padding:7px 16px; font-weight:700; font-size:14px;
             box-shadow:0 0 0 rgba(0,224,164,.6); animation:xmpulse 2.2s infinite;
@@ -80,26 +80,26 @@ def inject_css():
         .xm-think b{color:var(--xm-accent);}
         .xm-tool{display:inline-block;background:#0e2230;border:1px solid #1c3b4a;
             color:#7fd6ff;border-radius:6px;padding:4px 10px;margin:5px 0;font-size:13px;}
-        .xm-res-ok{background:rgba(82,196,26,.10);border:1px solid rgba(82,196,26,.45);
-            color:#b7eb8f;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:14px;}
-        .xm-res-fail{background:rgba(255,92,92,.10);border:1px solid rgba(255,92,92,.5);
-            color:#ffb3b3;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:14px;}
-        .xm-res-review{background:rgba(240,160,32,.10);border:1px solid rgba(240,160,32,.5);
-            color:#ffd591;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:14px;}
+        .xm-res-ok{background:#10220e;border:1px solid rgba(82,196,26,.55);
+            color:#bdf09a;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:14px;}
+        .xm-res-fail{background:#260f10;border:1px solid rgba(255,92,92,.6);
+            color:#ffc2c2;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:14px;}
+        .xm-res-review{background:#241b09;border:1px solid rgba(240,160,32,.6);
+            color:#ffdf9e;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:14px;}
 
         /* 自修复高光卡 */
         .xm-card{border:1.5px solid rgba(0,224,164,.5);border-radius:12px;padding:14px 16px;
-            margin:6px 0 14px;background:linear-gradient(180deg,rgba(0,224,164,.06),rgba(0,224,164,.01));
-            box-shadow:0 0 24px rgba(0,224,164,.10);}
+            margin:6px 0 14px;background:#0e1a16;
+            box-shadow:0 0 24px rgba(0,224,164,.18);}
         .xm-card-h{font-size:17px;font-weight:800;color:#eafff7;margin-bottom:10px;}
-        .xm-col-h{font-weight:700;font-size:13px;margin-bottom:6px;}
+        .xm-col-h{font-weight:700;font-size:13px;margin-bottom:6px;color:#e6edf3;}
         .xm-codebox{font-family:"SFMono-Regular",Consolas,"Courier New",monospace;font-size:12.5px;
             background:#0a0e13;border:1px solid #1c2733;border-radius:8px;padding:8px 0;overflow-x:auto;}
         .xm-codebox .ln{padding:1px 12px;white-space:pre;border-left:3px solid transparent;}
         .xm-codebox .del{background:rgba(255,92,92,.16);border-left:3px solid var(--xm-fail);}
         .xm-codebox .add{background:rgba(82,196,26,.16);border-left:3px solid var(--xm-ok);}
         .xm-punch{margin-top:10px;color:#eafff7;font-weight:700;font-size:14px;
-            background:rgba(0,224,164,.10);border-radius:8px;padding:8px 12px;}
+            background:#10241d;border:1px solid rgba(0,224,164,.35);border-radius:8px;padding:8px 12px;}
         .xm-errline{color:#ffb3b3;font-size:12.5px;margin-top:6px;}
         </style>
         """,
