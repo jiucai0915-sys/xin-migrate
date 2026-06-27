@@ -92,6 +92,38 @@ KB 新增了 `SUBSTR`、`CONCAT`（`||`拼接）两条规则。要让它们在**
 "CONCAT": "|| 拼接保留；可空列用 COALESCE(col,'') 包裹避免 NULL 传染",
 ```
 
+### 🔴 重要：`run_validation` 离线降级有 bug（建议 A 修，影响实时模式）
+
+现象：当**装了 psycopg2 但目标库没起**（演示机常态），`run_validation` 对任意 SQL 都返回
+`{ok:False, error:"connection ... timeout"}`，**没有按设计退化到静态校验**——连 `SELECT 1` 都判失败，
+且每次卡 ~4 秒超时。后果：实时模式下自修复会去追一个并不存在的"连接错误"。
+
+根因：`except Exception` 把"连不上库"和"SQL 真报错"混为一谈，且连接失败时直接 return 而没 fall through 到 `_static_check`。建议改成区分两者：
+
+```python
+def run_validation(args):
+    sql = args.get("sql", "")
+    try:
+        import psycopg2
+    except ImportError:
+        return _static_check(sql)
+    try:
+        conn = psycopg2.connect(VALIDATE_DB_DSN, connect_timeout=2)
+    except Exception:
+        return _static_check(sql)          # 连不上库 → 降级静态校验（离线可用，符合设计）
+    try:
+        cur = conn.cursor()
+        for stmt in [s for s in sql.split(";") if s.strip()]:
+            cur.execute("EXPLAIN " + stmt)
+        return {"ok": True, "engine": TARGET_DB, "msg": "语法校验通过"}
+    except Exception as e:
+        return {"ok": False, "engine": TARGET_DB, "error": str(e)}  # 真·SQL 报错 = 自修复信号
+    finally:
+        conn.close()
+```
+
+> **演示不受影响**：上台用「离线回放」模式，根本不调 `run_validation`。此项仅影响"实时端侧模型"模式。
+
 ---
 
 ## 6. 上台前
