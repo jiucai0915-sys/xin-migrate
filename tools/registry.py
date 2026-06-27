@@ -5,7 +5,7 @@
 2. 在 TOOLS 里登记函数
 3. 在 TOOL_SCHEMAS 里加 OpenAI function-calling 格式的 schema
 """
-from tools import file_ops, dialect, kb, validate
+from tools import file_ops, dialect, kb, validate, semantic_check
 
 # name -> 函数
 TOOLS = {
@@ -15,6 +15,7 @@ TOOLS = {
     "grep_dialect": dialect.grep_dialect,
     "query_migration_kb": kb.query_migration_kb,
     "run_validation": validate.run_validation,
+    "run_semantic_test": semantic_check.run_semantic_test,
     "request_human_review": validate.request_human_review,
 }
 
@@ -102,6 +103,18 @@ TOOL_SCHEMAS = [
             "parameters": {
                 "type": "object",
                 "properties": {"sql": {"type": "string", "description": "迁移后的 SQL"}},
+                "required": ["sql"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "run_semantic_test",
+            "description": "在样本数据上真实执行迁移后的 SELECT，与标准答案逐行比对，验证语义正确性（不只是语法）。语法对但结果错会被抓出。",
+            "parameters": {
+                "type": "object",
+                "properties": {"sql": {"type": "string", "description": "迁移后的 SELECT 语句"}},
                 "required": ["sql"],
             },
         },

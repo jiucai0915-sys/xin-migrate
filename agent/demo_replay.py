@@ -75,16 +75,26 @@ _SCRIPT = [
      "result": {"ok": True, "engine": "static", "msg": "静态语法校验通过，无残留 Oracle 语法"}},
     # ★★★ 高光结束：自修复成功 ★★★
 
+    # 第二道关：数据级语义验证（语法对≠语义对）
     {"type": "think", "step": 4,
+     "content": "语法过关了，但语法对不等于语义对。再用 run_semantic_test 在样本数据上真实执行，"
+                "比对结果是否与预期一致。"},
+    {"type": "tool_call", "step": 4, "name": "run_semantic_test",
+     "args": {"sql": "SELECT c.cust_id, COALESCE(...) , CASE ... FROM customers c LEFT JOIN orders o ..."}, "id": "cs"},
+    {"type": "tool_result", "step": 4, "name": "run_semantic_test",
+     "result": {"ok": True, "msg": "数据级语义验证通过：4 行结果与标准答案完全一致",
+                "rows": [[1, "张三", "已支付"], [1, "张三", "已支付"], [2, "未知客户", "待支付"], [3, "李四", "其他"]]}},
+
+    {"type": "think", "step": 5,
      "content": "(+) 外连接属高风险（影响连接语义），按规则请人工确认。"},
-    {"type": "tool_call", "step": 4, "name": "request_human_review",
+    {"type": "tool_call", "step": 5, "name": "request_human_review",
      "args": {"item": "(+) 外连接 → LEFT JOIN", "reason": "外连接方向影响结果集，需人工确认语义一致"}, "id": "c5"},
-    {"type": "tool_result", "step": 4, "name": "request_human_review",
+    {"type": "tool_result", "step": 5, "name": "request_human_review",
      "result": {"approved": True, "note": "人工确认：语义一致，通过"}},
 
-    {"type": "tool_call", "step": 5, "name": "write_file",
+    {"type": "tool_call", "step": 6, "name": "write_file",
      "args": {"path": "output/migrated.sql", "content": "<迁移后 SQL>"}, "id": "c6"},
-    {"type": "tool_result", "step": 5, "name": "write_file",
+    {"type": "tool_result", "step": 6, "name": "write_file",
      "result": {"ok": True, "path": "output/migrated.sql"}},
 
     {"type": "done", "content": _FINAL_SQL + "\n\n" + _REPORT},

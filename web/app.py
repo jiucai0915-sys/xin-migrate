@@ -124,6 +124,14 @@ def render():
                             st.success("✅ 验证通过")
                 elif ev["name"] == "request_human_review":
                     st.warning(f"🟡 高风险项已请人工确认：{result.get('note', '')}")
+                elif ev["name"] == "run_semantic_test":
+                    if result.get("ok"):
+                        st.success(f"🧪 数据级语义验证通过：{result.get('msg', '')}")
+                        if result.get("rows"):
+                            st.caption("样本数据上真实执行的结果（语法对≠语义对，这步保证结果也对）：")
+                            st.table(result["rows"])
+                    else:
+                        st.error(f"🧪 语义验证失败：{result.get('error', '')}")
                 else:
                     st.markdown(f"📄 `{ev['name']}` 返回")
                     with st.expander("查看结果", expanded=False):
