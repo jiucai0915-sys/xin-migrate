@@ -1,0 +1,13 @@
+# 信迁 Agent 演示界面主题 —— 深色「安全运维大屏」科技风
+# 注意：[theme] 改动需重启 streamlit 才生效；运行时细节样式由 app.py 注入的 CSS 负责。
+[theme]
+base = "dark"
+primaryColor = "#00E0A4"            # 霓虹青绿（强调色）
+backgroundColor = "#0B0F14"         # 主背景（近黑深蓝）
+secondaryBackgroundColor = "#141B24" # 侧栏/卡片背景
+textColor = "#E6EDF3"
+
+# 不要在这里设 server.headless=true：演示机跑 `streamlit run` 时要自动弹出浏览器。
+# 无头/自动化测试用命令行 --server.headless true 传入即可。
+[browser]
+gatherUsageStats = false
