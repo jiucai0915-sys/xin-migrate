@@ -74,55 +74,15 @@ streamlit run web/app.py
 
 ---
 
-## 5. ⚠️ 给 A 的协调备注（tools/ 归 A）
+## 5. 与 A 的协调记录（均已同步完成 ✅）
 
-KB 新增了 `SUBSTR`、`CONCAT`（`||`拼接）两条规则。要让它们在**实时模式**下被 `grep_dialect` 自动扫出来，需 A 在 `tools/dialect.py` 的 `DIALECT_PATTERNS` 加两条（**回放模式不受影响**，无需等这个）：
+以下几项 A 已在 `tools/`、`agent/` 侧完成并合入 main，这里留档：
 
-```python
-"SUBSTR": (r"\bSUBSTR\s*\(",  "Oracle 字符串截取，核对位置/负数语义", "低"),
-"CONCAT": (r"\|\|",            "字符串 || 拼接，注意 NULL 拼接语义差异", "中"),
-```
+- ✅ **`run_validation` 离线降级 bug 已修**：装了 psycopg2 但库没起时，正确降级到静态校验（不再把连接超时误判为 SQL 报错）。
+- ✅ **`SUBSTR` / `CONCAT`(`||`) 扫描规则已加**（`tools/dialect.py` + `_FIX_HINTS`），并新增 `COMPATIBLE_FEATURES` 集合：这类"兼容但提示"语法能被扫出来提示，但**不会判为迁移失败**（否则 `||` 这种合法语法会让自修复死循环）。这也是为什么进阶场景扫描数从 8 变 9（多识别出 SUBSTR）。
+- ✅ **新增 `run_semantic_test`（数据级语义验证）**：在内置 SQLite 样本库上真跑迁移后的 SELECT、与标准答案逐行比对，抓"语法对但语义错"（如误用 INNER JOIN 丢掉无订单客户）。**本界面已接入**：基础场景回放在"语法关"后加了"语义关"，结果用 `st.table` 展示（事件结构 `{ok, msg, rows[, expected]}`）。
 
-> 注意 KB 的键要与 dialect 的 feature 名一致（`query_migration_kb` 会把 feature 转大写匹配）：`SUBSTR`、`CONCAT`。
-
-并建议在 `tools/validate.py` 的 `_FIX_HINTS` 里也各加一条（静态校验失败时会把"怎么改"喂给弱模型，提高一次改对率）：
-
-```python
-"SUBSTR": "SUBSTR 多数国产库兼容；迁 PG 可用 SUBSTRING(str FROM pos FOR len)",
-"CONCAT": "|| 拼接保留；可空列用 COALESCE(col,'') 包裹避免 NULL 传染",
-```
-
-### 🔴 重要：`run_validation` 离线降级有 bug（建议 A 修，影响实时模式）
-
-现象：当**装了 psycopg2 但目标库没起**（演示机常态），`run_validation` 对任意 SQL 都返回
-`{ok:False, error:"connection ... timeout"}`，**没有按设计退化到静态校验**——连 `SELECT 1` 都判失败，
-且每次卡 ~4 秒超时。后果：实时模式下自修复会去追一个并不存在的"连接错误"。
-
-根因：`except Exception` 把"连不上库"和"SQL 真报错"混为一谈，且连接失败时直接 return 而没 fall through 到 `_static_check`。建议改成区分两者：
-
-```python
-def run_validation(args):
-    sql = args.get("sql", "")
-    try:
-        import psycopg2
-    except ImportError:
-        return _static_check(sql)
-    try:
-        conn = psycopg2.connect(VALIDATE_DB_DSN, connect_timeout=2)
-    except Exception:
-        return _static_check(sql)          # 连不上库 → 降级静态校验（离线可用，符合设计）
-    try:
-        cur = conn.cursor()
-        for stmt in [s for s in sql.split(";") if s.strip()]:
-            cur.execute("EXPLAIN " + stmt)
-        return {"ok": True, "engine": TARGET_DB, "msg": "语法校验通过"}
-    except Exception as e:
-        return {"ok": False, "engine": TARGET_DB, "error": str(e)}  # 真·SQL 报错 = 自修复信号
-    finally:
-        conn.close()
-```
-
-> **演示不受影响**：上台用「离线回放」模式，根本不调 `run_validation`。此项仅影响"实时端侧模型"模式。
+> 分工已厘清：`web/` 归 B，`agent/`+`tools/` 归 A，不再重叠。
 
 ---
 

@@ -37,7 +37,7 @@
     "step": 0,
     "name": "grep_dialect",
     "result": {
-      "count": 8,
+      "count": 9,
       "hits": [
         {
           "feature": "NVL",
@@ -94,6 +94,13 @@
           "matched": "ROWID",
           "desc": "Oracle 物理行标识 ROWID，国产库通常无对应，需改用主键",
           "risk": "高"
+        },
+        {
+          "feature": "SUBSTR",
+          "line": 28,
+          "matched": "SUBSTR(",
+          "desc": "字符串截取，多数国产库兼容；迁 PG 可用 SUBSTRING，核对位置/负数语义",
+          "risk": "低"
         }
       ]
     }
@@ -101,7 +108,7 @@
   {
     "type": "think",
     "step": 1,
-    "content": "扫描到 8 处不兼容语法。进阶场景高风险扎堆：层级查询(CONNECT BY)、合并(MERGE)、物理行删除(ROWID) 都是迁移里最难啃的。策略：低/中风险按知识库直接改；3 个高风险项逐一改写 + 验证，且全部请人工确认。先查最难的 CONNECT BY。"
+    "content": "扫描到 9 处不兼容语法。进阶场景高风险扎堆：层级查询(CONNECT BY)、合并(MERGE)、物理行删除(ROWID) 都是迁移里最难啃的。策略：低/中风险按知识库直接改；3 个高风险项逐一改写 + 验证，且全部请人工确认。先查最难的 CONNECT BY。"
   },
   {
     "type": "tool_call",

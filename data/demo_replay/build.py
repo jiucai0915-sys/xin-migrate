@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..")))  # 仓库根
 DEMO_DIR = os.path.join(HERE, "..", "demo_project")
 
 from tools.dialect import grep_dialect  # noqa: E402  用真实工具产扫描结果，保证回放数字不穿帮
+from tools.semantic_check import run_semantic_test  # noqa: E402  第二道关：数据级语义验证
 
 
 def _read(path: str) -> str:
@@ -62,6 +63,17 @@ LEFT JOIN orders o ON c.cust_id = o.cust_id
 LIMIT 100;
 
 SELECT CURRENT_TIMESTAMP;"""
+
+# 语义验证用的迁移后查询（单条 SELECT，喂给 run_semantic_test 在样本数据上真跑、比对标准答案）
+BASIC_SEM_SQL = """SELECT
+    c.cust_id,
+    COALESCE(c.cust_name, '未知客户') AS cust_name,
+    CASE o.status WHEN 1 THEN '已支付' WHEN 0 THEN '待支付' ELSE '其他' END AS status_text
+FROM customers c
+LEFT JOIN orders o ON c.cust_id = o.cust_id
+ORDER BY c.cust_id;"""
+BASIC_SEM = run_semantic_test({"sql": BASIC_SEM_SQL})   # 真实跑一遍，结果与标准答案逐行比对
+assert BASIC_SEM.get("ok"), f"语义验证基线应通过，实际: {BASIC_SEM}"
 
 BASIC_REPORT = """#### ✅ 迁移后 SQL（达梦 / 人大金仓兼容）
 ```sql
@@ -122,16 +134,23 @@ BASIC = [
      "result": {"ok": True, "engine": "static", "msg": "静态语法校验通过，无残留 Oracle 语法"}},
     # ★★★ 高光结束：自修复成功 ★★★
 
+    # 第二道关：数据级语义验证（语法对≠语义对）——把"验证"从静态语法推进到数据结果
     {"type": "think", "step": 4,
+     "content": "语法过关了，但“能跑通”不等于“迁移对”。再用 run_semantic_test 在样本数据上真实执行迁移后的查询，"
+                "把结果与标准答案逐行比对——结果一致，才算真的迁对（比如 LEFT JOIN 误写成 INNER JOIN，语法没错但会丢掉无订单的客户）。"},
+    {"type": "tool_call", "step": 4, "name": "run_semantic_test", "args": {"sql": BASIC_SEM_SQL}, "id": "b_sem"},
+    {"type": "tool_result", "step": 4, "name": "run_semantic_test", "result": BASIC_SEM},
+
+    {"type": "think", "step": 5,
      "content": "(+) 外连接属高风险——连接方向会影响结果集语义，不能擅自定论。按规则暂停，请人工确认。"},
-    {"type": "tool_call", "step": 4, "name": "request_human_review",
+    {"type": "tool_call", "step": 5, "name": "request_human_review",
      "args": {"item": "(+) 外连接 → LEFT JOIN", "reason": "外连接方向影响结果集，需人工确认语义一致"}, "id": "b6"},
-    {"type": "tool_result", "step": 4, "name": "request_human_review",
+    {"type": "tool_result", "step": 5, "name": "request_human_review",
      "result": {"approved": True, "note": "人工确认：语义一致，通过"}},
 
-    {"type": "tool_call", "step": 5, "name": "write_file",
+    {"type": "tool_call", "step": 6, "name": "write_file",
      "args": {"path": "output/migrated_basic.sql", "content": BASIC_ATTEMPT_OK}, "id": "b7"},
-    {"type": "tool_result", "step": 5, "name": "write_file",
+    {"type": "tool_result", "step": 6, "name": "write_file",
      "result": {"ok": True, "path": "output/migrated_basic.sql"}},
 
     {"type": "done", "content": BASIC_REPORT},

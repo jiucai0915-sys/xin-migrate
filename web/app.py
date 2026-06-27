@@ -131,6 +131,14 @@ def _code_html(lines_tags):
     return "<div class='xm-codebox'>" + "".join(rows) + "</div>"
 
 
+def _rows_to_table(rows):
+    """结果行列表 → 便于 st.table 展示的结构；3 列时套用业务表头（客户ID/客户名/订单状态）。"""
+    rows = [list(r) for r in rows]
+    if rows and len(rows[0]) == 3:
+        return [{"客户ID": r[0], "客户名": r[1], "订单状态": r[2]} for r in rows]
+    return rows
+
+
 def render_repair_highlight(box, failed_sql: str, error: str, fixed_sql: str):
     btags, atags = _diff_tag_lines(failed_sql or "", fixed_sql or "")
     with box:
@@ -288,6 +296,24 @@ def render():
                             f"<div class='xm-res-review'>🟡 高风险项已请人工确认："
                             f"{html.escape(str(result.get('note','')))}</div>",
                             unsafe_allow_html=True)
+                    elif name == "run_semantic_test":
+                        # 第二道关：数据级语义验证——展示在样本数据上真跑出来的结果表
+                        if result.get("ok"):
+                            st.markdown(
+                                f"<div class='xm-res-ok'>🧪 数据级语义验证通过："
+                                f"{html.escape(str(result.get('msg', '')))}</div>",
+                                unsafe_allow_html=True)
+                        else:
+                            st.markdown(
+                                f"<div class='xm-res-fail'>🧪 语义验证失败（语法可能没问题，但结果不对）："
+                                f"{html.escape(str(result.get('error', '')))}</div>",
+                                unsafe_allow_html=True)
+                        if result.get("rows"):
+                            st.caption("迁移后查询在样本数据上的真实结果：")
+                            st.table(_rows_to_table(result["rows"]))
+                        if not result.get("ok") and result.get("expected"):
+                            st.caption("标准答案（期望结果）：")
+                            st.table(_rows_to_table(result["expected"]))
                     else:
                         st.markdown(f"<div class='xm-tool xm-mono'>📄 {html.escape(name)} 返回</div>",
                                     unsafe_allow_html=True)
