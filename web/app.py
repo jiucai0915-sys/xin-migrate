@@ -221,8 +221,9 @@ with left:
 
 with right:
     st.markdown("<div class='xm-sec'>② Agent 实时工作过程</div>", unsafe_allow_html=True)
-    highlight_box = st.container()   # 自修复高光区（置顶醒目）
-    timeline_box = st.container()    # 思考链时间线
+    highlight_box = st.container()   # 自修复高光区（置顶醒目，不滚动）
+    st.markdown("**🧠 思考链**")
+    timeline_box = st.container(height=480)   # 固定高度+自动滚动，单屏容纳更多（合入 A 的改进）
 
 st.divider()
 result_box = st.container()
