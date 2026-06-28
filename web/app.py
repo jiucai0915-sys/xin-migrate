@@ -241,7 +241,7 @@ with top_r:
 # ====================== 侧边栏 ======================
 with st.sidebar:
     st.header("⚙️ 运行模式")
-    mode = st.radio("事件源", ["离线回放（演示推荐·稳定）", "实时端侧模型（需 Ollama）"], index=0)
+    mode = st.radio("事件源", ["离线回放", "实时端侧模型"], index=0)
     replay_delay = st.slider("回放每步停顿(秒)", 0.0, 2.0, 0.9, 0.1,
                              help="演示节奏：太快看不清，太慢拖时间，0.9 左右最佳")
     st.divider()
