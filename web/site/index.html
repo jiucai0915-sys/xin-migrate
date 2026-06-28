@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>信迁 Agent · XinMigrate —— 纯内网运行的国产化迁移 Agent</title>
+<style>
+/* ============================================================
+   信迁 Agent 汇报页（发布会风）· 单文件零依赖 · 深黑科技风
+   配色与 streamlit 演示界面一致：青绿 #00E0A4 + 近黑 #0B0F14
+   ============================================================ */
+:root{
+  --accent:#00E0A4; --accent2:#3BF5C0;
+  --fail:#ff5c5c; --ok:#52c41a; --warn:#f0a020;
+  --bg:#0B0F14; --bg2:#0A0E13; --card:#141B24; --card2:#11171f;
+  --line:#1f2a36; --text:#E6EDF3; --muted:#90A6AE; --dim:#5C6B7A;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  --sans:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--sans);
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+/* 整页竖向滚动 + 整屏吸附（滚动/翻页两用） */
+.deck{height:100vh; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth;}
+.deck::-webkit-scrollbar{width:0;height:0}           /* 演示时隐藏滚动条 */
+.slide{
+  min-height:100vh; scroll-snap-align:start; scroll-snap-stop:always;
+  position:relative; display:flex; flex-direction:column; justify-content:center;
+  padding:6vh 8vw; overflow:hidden;
+}
+/* 背景：网格 + 角落青绿光晕 */
+.slide::before{
+  content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(0,224,164,.10), transparent 42%),
+    radial-gradient(circle at 88% 90%, rgba(0,224,164,.06), transparent 46%),
+    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+  background-size:100% 100%,100% 100%,42px 42px,42px 42px;
+}
+.slide > *{position:relative; z-index:1}
+
+/* 进场动画：默认下沉透明，进入视口后由 JS 加 .in */
+.reveal{opacity:0; transform:translateY(26px); transition:opacity .7s ease, transform .7s ease;}
+.slide.in .reveal{opacity:1; transform:none}
+.slide.in .reveal.d1{transition-delay:.12s}
+.slide.in .reveal.d2{transition-delay:.24s}
+.slide.in .reveal.d3{transition-delay:.36s}
+.slide.in .reveal.d4{transition-delay:.48s}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1!important;transform:none!important}}
+
+/* 文字层级 */
+.kicker{font-family:var(--mono); font-size:14px; letter-spacing:3px; text-transform:uppercase;
+  color:var(--accent); margin-bottom:18px; display:flex; align-items:center; gap:10px;}
+.kicker::before{content:""; width:26px; height:2px; background:var(--accent); display:inline-block;}
+h1{font-size:clamp(34px,6vw,76px); font-weight:800; line-height:1.08; letter-spacing:1px;}
+h2{font-size:clamp(26px,4vw,48px); font-weight:800; line-height:1.18; letter-spacing:.5px;}
+.lead{font-size:clamp(16px,1.7vw,22px); color:#c8d6e0; line-height:1.7; max-width:60ch; margin-top:18px;}
+.en{font-family:var(--mono); color:var(--muted); font-weight:500;}
+.hl{color:var(--accent)} .hlf{color:var(--fail)} .hlo{color:var(--ok)}
+strong{color:#eafff7}
+.big-num{font-size:clamp(40px,7vw,96px); font-weight:800; color:var(--accent); line-height:1;
+  font-family:var(--mono); text-shadow:0 0 28px rgba(0,224,164,.35);}
+
+/* 断网徽标：呼吸辉光 */
+.net{display:inline-flex; align-items:center; gap:9px; margin-top:30px;
+  background:rgba(10,125,50,.16); color:#7CF2B8; border:1px solid rgba(0,224,164,.55);
+  border-radius:999px; padding:9px 20px; font-weight:700; font-size:15px;
+  animation:pulse 2.4s infinite;}
+.net .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,224,164,.45)}70%{box-shadow:0 0 0 14px rgba(0,224,164,0)}100%{box-shadow:0 0 0 0 rgba(0,224,164,0)}}
+
+/* 卡片网格 */
+.grid{display:grid; gap:18px; margin-top:34px}
+.g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)}
+@media (max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid var(--line);
+  border-radius:14px; padding:22px 24px;}
+.card h3{font-size:19px; color:#eafff7; margin-bottom:8px; display:flex; align-items:center; gap:9px}
+.card p{color:#b3c2cd; font-size:15px; line-height:1.65}
+.card .ic{font-size:22px}
+
+/* 流程链 */
+.flow{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:30px}
+.flow .step{background:var(--card); border:1px solid var(--line); border-radius:10px;
+  padding:10px 16px; font-weight:700; font-size:15px; color:#dbe7ef}
+.flow .step.key{border-color:var(--accent); color:var(--accent); box-shadow:0 0 18px rgba(0,224,164,.18)}
+.flow .arrow{color:var(--accent); font-weight:800}
+
+/* 对比表 */
+table.cmp{width:100%; border-collapse:collapse; margin-top:28px; font-size:15px}
+table.cmp th,table.cmp td{text-align:left; padding:13px 16px; border-bottom:1px solid var(--line)}
+table.cmp th{color:var(--muted); font-weight:600; font-family:var(--mono); font-size:13px; letter-spacing:.5px}
+table.cmp td:first-child{color:#dbe7ef; font-weight:700; white-space:nowrap}
+table.cmp td:last-child{color:#b3c2cd}
+
+/* ====== 第6屏：自修复高光卡 + diff 动画 ====== */
+.repair{display:grid; grid-template-columns:1fr auto 1fr; gap:18px; align-items:stretch; margin-top:30px}
+@media (max-width:900px){.repair{grid-template-columns:1fr; }}
+.codecard{border-radius:14px; border:1.5px solid var(--line); background:var(--bg2); overflow:hidden;
+  display:flex; flex-direction:column;}
+.codecard.bad{border-color:rgba(255,92,92,.5)}
+.codecard.good{border-color:rgba(0,224,164,.5); box-shadow:0 0 28px rgba(0,224,164,.14)}
+.codecard .ch{padding:11px 16px; font-weight:700; font-size:14px; border-bottom:1px solid var(--line)}
+.codecard.bad .ch{color:#ff8c8c; background:rgba(255,92,92,.08)}
+.codecard.good .ch{color:#95de64; background:rgba(82,196,26,.08)}
+.code{font-family:var(--mono); font-size:13px; line-height:1.7; padding:10px 0; overflow-x:auto}
+.code .ln{padding:1px 16px; white-space:pre; border-left:3px solid transparent}
+.code .del{background:rgba(255,92,92,.16); border-left-color:var(--fail)}
+.code .add{background:rgba(82,196,26,.16); border-left-color:var(--ok)}
+.code .add.pop{animation:popline .5s ease both}
+@keyframes popline{0%{background:rgba(82,196,26,.5)}100%{background:rgba(82,196,26,.16)}}
+.codecard .cf{padding:9px 16px; font-size:12.5px; border-top:1px solid var(--line)}
+.codecard.bad .cf{color:#ffb3b3} .codecard.good .cf{color:#95de64}
+.midarrow{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+  color:var(--accent); font-size:13px; font-weight:700; text-align:center}
+.midarrow .big{font-size:30px; animation:nudge 1.6s ease-in-out infinite}
+@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+@media (max-width:900px){.midarrow .big{transform:rotate(90deg)}}
+.shake{animation:shake .5s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.stamp{display:inline-block; margin-top:14px; padding:7px 16px; border-radius:999px; font-weight:800;
+  color:#0a1a12; background:var(--accent); box-shadow:0 0 22px rgba(0,224,164,.5); opacity:0; transform:scale(.7);}
+.stamp.show{animation:stampin .5s ease both}
+@keyframes stampin{0%{opacity:0;transform:scale(.6)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+.punch{margin-top:22px; padding:16px 20px; border-radius:12px; font-weight:700; font-size:clamp(15px,1.6vw,18px);
+  color:#eafff7; background:rgba(0,224,164,.10); border:1px solid rgba(0,224,164,.3); line-height:1.6}
+
+/* 右侧圆点导航 */
+.dots{position:fixed; right:22px; top:50%; transform:translateY(-50%); z-index:50;
+  display:flex; flex-direction:column; gap:13px}
+.dots button{width:11px; height:11px; border-radius:50%; border:1.5px solid rgba(255,255,255,.35);
+  background:transparent; cursor:pointer; padding:0; transition:all .25s}
+.dots button:hover{border-color:var(--accent)}
+.dots button.active{background:var(--accent); border-color:var(--accent); box-shadow:0 0 10px var(--accent); transform:scale(1.25)}
+/* 顶部进度条 */
+.progress{position:fixed; top:0; left:0; height:3px; background:var(--accent); width:0;
+  z-index:60; box-shadow:0 0 10px var(--accent); transition:width .15s}
+/* 滚动提示 */
+.scroll-hint{position:absolute; bottom:5vh; left:50%; transform:translateX(-50%);
+  color:var(--muted); font-size:13px; font-family:var(--mono); letter-spacing:1px; text-align:center}
+.scroll-hint .m{font-size:20px; display:block; animation:bob 1.8s infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
+.hint-keys{position:fixed; left:22px; bottom:18px; z-index:50; color:var(--dim);
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.5px}
+.hint-keys kbd{background:var(--card); border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--muted)}
+
+/* 封面 logo */
+.cover-logo{max-width:min(560px,82vw); height:auto; margin-bottom:8px}
+.cover-logo svg{width:100%; height:auto; display:block}
+
+/* 署名 / 页脚 */
+.signoff{display:flex; flex-wrap:wrap; gap:36px; align-items:center; margin-top:36px}
+.sign-block .t{font-size:13px; color:var(--muted); font-family:var(--mono); letter-spacing:1px; margin-bottom:6px}
+.sign-block .v{font-size:20px; font-weight:800; color:#eafff7}
+.sign-block .v.sm{font-size:16px; font-weight:700; color:#dbe7ef}
+.qr-wrap{display:flex; align-items:center; gap:16px; margin-left:auto}
+.qr-wrap .qr{background:#fff; padding:10px; border-radius:12px; line-height:0; box-shadow:0 0 24px rgba(0,224,164,.18)}
+.qr-wrap .qr canvas{display:block; image-rendering:pixelated}
+.qr-cap{font-size:13px; color:var(--muted); max-width:18ch; line-height:1.5}
+.qr-cap b{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="dots" id="dots"></div>
+<div class="hint-keys">翻页 <kbd>↑</kbd><kbd>↓</kbd><kbd>Space</kbd> · 全屏 <kbd>F11</kbd></div>
+<div class="deck" id="deck">
+
+<!-- ===== 1 · 封面 ===== -->
+<section class="slide" data-name="封面">
+  <div class="reveal cover-logo">
+    <svg viewBox="0 0 520 150" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="信迁 Agent 标志">
+      <defs>
+        <linearGradient id="plate" x1="0" y1="0" x2="520" y2="150" gradientUnits="userSpaceOnUse"><stop stop-color="#0F1822"/><stop offset="1" stop-color="#0A0F14"/></linearGradient>
+        <linearGradient id="lacc" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3BF5C0"/><stop offset="1" stop-color="#00C48F"/></linearGradient>
+        <filter id="lglow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <rect x="1" y="1" width="518" height="148" rx="26" fill="url(#plate)" stroke="#00E0A4" stroke-opacity="0.4" stroke-width="2"/>
+      <g transform="translate(34,40)">
+        <path d="M14 2 H3 V68 H14" fill="none" stroke="#5C6B7A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <g filter="url(#lglow)"><path d="M20 35 H40" stroke="url(#lacc)" stroke-width="6" stroke-linecap="round"/><path d="M35 27 L49 35 L35 43 Z" fill="url(#lacc)"/></g>
+        <path d="M51 2 H62 V68 H51" fill="none" stroke="url(#lacc)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" filter="url(#lglow)"/>
+      </g>
+      <line x1="138" y1="36" x2="138" y2="114" stroke="#1f2c38" stroke-width="2"/>
+      <text x="162" y="70" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="52" font-weight="800" fill="#F2FBF7" letter-spacing="3">信迁</text>
+      <text x="284" y="70" font-family="'PingFang SC',sans-serif" font-size="30" font-weight="700" fill="url(#lacc)">Agent</text>
+      <text x="164" y="100" font-family="'SFMono-Regular',Consolas,monospace" font-size="15" fill="#90A6AE" letter-spacing="0.3">XinMigrate · 代码不出域，迁移自动化</text>
+      <g transform="translate(164,113)"><circle cx="5" cy="3" r="3.5" fill="#00E0A4" filter="url(#lglow)"/><text x="16" y="7" font-family="'PingFang SC',sans-serif" font-size="12.5" fill="#7CF2B8" font-weight="600">纯内网离线运行 · Oracle → 达梦 / 金仓</text></g>
+    </svg>
+  </div>
+  <h1 class="reveal d1">纯内网运行的<br><span class="hl">国产化迁移 Agent</span></h1>
+  <p class="lead reveal d2">把企业老代码（Oracle SQL）自动迁移到国产数据库——<strong>模型、数据、代码全程不出企业内网</strong>。<br><span class="en">Offline-First Migration Agent · Verify &amp; Self-Heal</span></p>
+  <div class="reveal d3"><span class="net"><span class="dot"></span>🔌 全程内网离线运行 · 断网可用</span></div>
+  <div class="scroll-hint reveal d4"><span class="m">⌄</span>滚动 / 空格 翻页</div>
+</section>
+
+<!-- ===== 2 · 痛点 ===== -->
+<section class="slide" data-name="痛点">
+  <div class="kicker reveal">痛点 · The Problem</div>
+  <h2 class="reveal d1">央国企正在被一道红线<span class="hl">卡住</span></h2>
+  <p class="lead reveal d2">信创国产化替代是<strong>国家级强制工程</strong>：Oracle / SQL Server → 达梦、人大金仓；x86 → 鲲鹏 / 昇腾。几十万行老代码必须改。</p>
+  <div class="grid g3">
+    <div class="card reveal d2"><div class="big-num">数十万</div><p style="margin-top:10px">行老代码待迁移，单个中型系统的体量</p></div>
+    <div class="card reveal d3"><div class="big-num">数百万</div><p style="margin-top:10px">外包报价；人工迁移按<strong>人年</strong>计，周期数月</p></div>
+    <div class="card reveal d4"><div class="big-num hlf">红线</div><p style="margin-top:10px">代码是核心敏感资产，<strong>法律明令不许上云</strong></p></div>
+  </div>
+</section>
+
+<!-- ===== 3 · 致命一击 ===== -->
+<section class="slide" data-name="致命一击">
+  <div class="kicker reveal">致命一击 · Why Cloud AI Can't Enter</div>
+  <h2 class="reveal d1">所有云端 AI 工具，<br><span class="hlf">在合规上根本进不来</span></h2>
+  <p class="lead reveal d2">GitHub Copilot、通义灵码云版……它们都依赖云端大模型，需要把代码上传。而"代码不出域"是<strong>不可逾越的合规红线</strong>——<span class="hlf">不是不好用，是法律上就进不来</span>。</p>
+  <div class="punch reveal d3">📌 市场结论：这是一个由<strong>政策强制驱动</strong>、需求确定、且把云端 AI 巨头<strong>天然挡在门外</strong>的市场。谁能提供「纯内网可用」的迁移能力，谁就能吃下这块蛋糕。</div>
+</section>
+
+<!-- ===== 4 · 方案 ===== -->
+<section class="slide" data-name="方案">
+  <div class="kicker reveal">方案 · Our Solution</div>
+  <h2 class="reveal d1">一个跑在企业内网、<span class="hl">断网可用</span>的迁移 Agent</h2>
+  <p class="lead reveal d2">把老代码交给它，它像一位资深迁移工程师那样<strong>自主完成</strong>——像 Copilot / Claude Code，但<strong>断网也能跑</strong>，且专攻"信创迁移"垂直场景。</p>
+  <div class="flow reveal d3">
+    <span class="step">扫描</span><span class="arrow">→</span>
+    <span class="step">规划</span><span class="arrow">→</span>
+    <span class="step">改写</span><span class="arrow">→</span>
+    <span class="step key">验证</span><span class="arrow">→</span>
+    <span class="step key">自修复</span><span class="arrow">→</span>
+    <span class="step">人工确认</span><span class="arrow">→</span>
+    <span class="step">产出报告</span>
+  </div>
+</section>
+
+<!-- ===== 5 · 为什么是 Agent ===== -->
+<section class="slide" data-name="为什么是Agent">
+  <div class="kicker reveal">为什么是 Agent · Not a GPT Wrapper</div>
+  <h2 class="reveal d1">它会<span class="hl">自己决定</span>下一步做什么</h2>
+  <p class="lead reveal d2">不是一问一答，是一个会自我纠错的"迁移工程师"——多步自主决策 + 真实工具调用。</p>
+  <div class="grid g2">
+    <div class="card reveal d2"><h3><span class="ic">🧭</span>多步自主</h3><p>自己决定先扫哪里、查哪条规则、改哪一项、何时该跑验证——而不是等人逐步指令。</p></div>
+    <div class="card reveal d3"><h3><span class="ic">🛠️</span>工具调用</h3><p>读文件 / 方言扫描 / 查迁移知识库 / 跑验证 / 请人确认，像工程师一样使用一套工具。</p></div>
+  </div>
+</section>
+
+<!-- ===== 6 · 核心差异化（全场重点）：自修复动画 ===== -->
+<section class="slide" id="repair-slide" data-name="核心差异化">
+  <div class="kicker reveal">核心差异化 · Verify &amp; Self-Heal　★ 全场重点</div>
+  <h2 class="reveal d1">模型越弱，<span class="hl">编排越值钱</span></h2>
+  <p class="lead reveal d2">端侧开源模型（Qwen2.5-Coder）比 GPT-4 弱、<strong>会犯错</strong>。云端套壳谁都会；<strong>难的是让弱模型在内网把活干对</strong>——这才是护城河。下面是它处理 Oracle <span class="hlf">(+) 外连接</span>时，<strong>真实的「改错 → 读报错 → 自我修复」</strong>：</p>
+  <div class="repair reveal d3">
+    <div class="codecard bad" id="card-bad">
+      <div class="ch">❌ 第一次改写（验证失败）</div>
+      <div class="code">
+<div class="ln">SELECT</div>
+<div class="ln">    c.cust_id,</div>
+<div class="ln">    COALESCE(c.cust_name, '未知客户') AS cust_name,</div>
+<div class="ln">    CASE o.status WHEN 1 THEN '已支付' ... END AS status_text</div>
+<div class="ln del">FROM customers c, orders o</div>
+<div class="ln del">WHERE c.cust_id = o.cust_id(+)</div>
+<div class="ln">LIMIT 100;</div>
+      </div>
+      <div class="cf" id="err-line">🔴 残留 Oracle (+) 外连接，目标库不支持</div>
+    </div>
+    <div class="midarrow"><span class="big">→</span><span>读懂报错<br>自我修复</span></div>
+    <div class="codecard good" id="card-good">
+      <div class="ch">✅ 自修复后（验证通过）</div>
+      <div class="code">
+<div class="ln">SELECT</div>
+<div class="ln">    c.cust_id,</div>
+<div class="ln">    COALESCE(c.cust_name, '未知客户') AS cust_name,</div>
+<div class="ln">    CASE o.status WHEN 1 THEN '已支付' ... END AS status_text</div>
+<div class="ln add" data-pop>FROM customers c</div>
+<div class="ln add" data-pop>LEFT JOIN orders o ON c.cust_id = o.cust_id</div>
+<div class="ln">LIMIT 100;</div>
+      </div>
+      <div class="cf">🟢 (+) → 标准 LEFT JOIN，静态校验通过 <span class="stamp" id="ok-stamp">✓ PASS</span></div>
+    </div>
+  </div>
+  <div class="punch reveal d4">💡 让弱模型犯错后还能<strong>自己改对</strong>，正是「验证 + 自修复」闭环的工程价值。<span class="en">Weak model + strong orchestration.</span></div>
+</section>
+
+<!-- ===== 7 · 两道质量关 ===== -->
+<section class="slide" data-name="两道质量关">
+  <div class="kicker reveal">两道质量关 · Two Quality Gates</div>
+  <h2 class="reveal d1">从「语法对」做到「<span class="hl">结果对</span>」</h2>
+  <p class="lead reveal d2">改完就完事？不。我们设了两道关，能跑通 ≠ 迁移对。</p>
+  <div class="grid g2">
+    <div class="card reveal d2"><h3><span class="ic">①</span>语法关 <span class="en">Syntax</span></h3><p>残留 Oracle 语法检测：NVL、DECODE、(+)外连接、ROWNUM、CONNECT BY、MERGE、ROWID…… 没改干净直接判失败，触发自修复。</p></div>
+    <div class="card reveal d3"><h3><span class="ic">②</span>语义关 <span class="en">Semantics</span></h3><p>在样本数据上<strong>真实执行</strong>迁移后的查询、与标准答案逐行比对。专抓"语法对但语义错"——比如把 LEFT JOIN 误写成 INNER JOIN，<span class="hlf">悄悄丢掉没有订单的客户</span>。</p></div>
+  </div>
+  <div class="punch reveal d4">🧪 这种错，语法检查永远查不出，<strong>只有真跑数据才抓得到</strong>。</div>
+</section>
+
+<!-- ===== 8 · 技术架构 ===== -->
+<section class="slide" data-name="技术架构">
+  <div class="kicker reveal">技术架构 · Architecture</div>
+  <h2 class="reveal d1">轻、稳、<span class="hl">全离线</span></h2>
+  <div class="grid g2">
+    <div class="card reveal d2"><h3><span class="ic">🧠</span>端侧模型</h3><p>Qwen2.5-Coder（7b/32b），经 Ollama 本地服务（OpenAI 兼容接口）——全程本地推理，断网可用。</p></div>
+    <div class="card reveal d2"><h3><span class="ic">⚙️</span>自研轻量 ReAct</h3><p>不依赖 LangChain 等重框架。弱模型工程兜底：JSON 文本回退 / 容错解析 / 修复指令注入。</p></div>
+    <div class="card reveal d3"><h3><span class="ic">✅</span>验证引擎</h3><p>优先连真实达梦 / 金仓；无库时自动降级为静态语法校验 + SQLite 语义验证，保证离线可用。</p></div>
+    <div class="card reveal d3"><h3><span class="ic">📚</span>迁移知识库</h3><p>Oracle→国产库规则库，随项目持续沉淀——越用越厚，形成数据壁垒。</p></div>
+  </div>
+</section>
+
+<!-- ===== 9 · ROI / 商业模式 ===== -->
+<section class="slide" data-name="商业价值">
+  <div class="kicker reveal">商业价值 · ROI &amp; Business</div>
+  <h2 class="reveal d1">做别人<span class="hl">法律上做不了</span>的生意</h2>
+  <div class="grid g3">
+    <div class="card reveal d2"><h3>效率</h3><p>自动化覆盖 <strong class="hl">60–80%</strong> 机械迁移，人只 review 高风险项，周期与成本大幅下降。</p></div>
+    <div class="card reveal d3"><h3>商业模式</h3><p>私有化部署 <strong>License</strong> + 按系统/按行计费的<strong>迁移项目费</strong>；知识库随项目沉淀成壁垒。</p></div>
+    <div class="card reveal d4"><h3>市场</h3><p>信创是<strong>国家级强制工程</strong>，央国企/政府/金融全是客户，"不许上云"天然挡住云端巨头。</p></div>
+  </div>
+  <div class="punch reveal d4">🛡️ 唯一合规可用 · 真能干对活 · 可控可信 —— 三个选择我们的理由。</div>
+</section>
+
+<!-- ===== 10 · 路线图 + 收尾 + 署名 ===== -->
+<section class="slide" data-name="路线图与团队">
+  <div class="kicker reveal">路线图 &amp; 团队 · Roadmap &amp; Team</div>
+  <h2 class="reveal d1">已跑通闭环，<span class="hl">接下来把护城河做厚</span></h2>
+  <div class="grid g3">
+    <div class="card reveal d2"><h3 class="hlo">✅ 已实现</h3><p>纯内网自主闭环 · 验证+自修复 · 数据级语义验证 · 高风险升级人工 · 可视化演示，真机端到端验证通过。</p></div>
+    <div class="card reveal d3"><h3>🔴 P0 可用级</h3><p>语义验证规模化 · 真连达梦/金仓 · 覆盖 PL/SQL / 视图 / 触发器 / 应用层。</p></div>
+    <div class="card reveal d4"><h3>🟠 P1 / 🟡 P2</h3><p>几十万行级批量 · 知识库 12→数百条 · 模型升级 · 信创部署（国产芯片/OS）· 审计权限合规。</p></div>
+  </div>
+  <div class="signoff reveal d4">
+    <div class="sign-block"><div class="t">TEAM · 团队</div><div class="v">昆仑战队</div></div>
+    <div class="sign-block"><div class="t">MEMBERS · 成员</div><div class="v sm">李昊伦 · 白卓昆</div></div>
+    <div class="sign-block"><div class="t">TRACK · 赛道</div><div class="v sm">ToB AI Agent 开放赛道</div></div>
+    <div class="qr-wrap">
+      <div class="qr" id="qrbox" aria-label="项目仓库二维码"></div>
+      <div class="qr-cap">扫码看源码<br><b>Gitee 开源仓库</b></div>
+    </div>
+  </div>
+</section>
+
+</div>
+<!-- SCRIPT_PLACEHOLDER -->
+<script>
+/* ============================================================
+   内联 QR 生成器（零依赖、不联外网）
+   基于 qrcode-generator (Kazuhiko Arase, MIT) 的精简核心，
+   仅保留 8-bit 字节模式 + 自动选型 + 纠错，足够把仓库 URL 画成可扫二维码。
+   暴露 window.makeQRCanvas(text, sizePx) -> <canvas>
+   ============================================================ */
+(function(){
+"use strict";
+var QRMath={glog:function(n){if(n<1)throw new Error("glog("+n+")");return QRMath.LOG_TABLE[n];},
+gexp:function(n){while(n<0)n+=255;while(n>=256)n-=255;return QRMath.EXP_TABLE[n];},
+EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)};
+for(var i=0;i<8;i++)QRMath.EXP_TABLE[i]=1<<i;
+for(i=8;i<256;i++)QRMath.EXP_TABLE[i]=QRMath.EXP_TABLE[i-4]^QRMath.EXP_TABLE[i-5]^QRMath.EXP_TABLE[i-6]^QRMath.EXP_TABLE[i-8];
+for(i=0;i<255;i++)QRMath.LOG_TABLE[QRMath.EXP_TABLE[i]]=i;
+
+function QRPolynomial(num,shift){if(num.length===undefined)throw new Error(num.length+"/"+shift);
+var offset=0;while(offset<num.length&&num[offset]===0)offset++;
+this.num=new Array(num.length-offset+shift);
+for(var i=0;i<num.length-offset;i++)this.num[i]=num[i+offset];}
+QRPolynomial.prototype={get:function(i){return this.num[i];},getLength:function(){return this.num.length;},
+multiply:function(e){var num=new Array(this.getLength()+e.getLength()-1);
+for(var i=0;i<this.getLength();i++)for(var j=0;j<e.getLength();j++)
+num[i+j]^=QRMath.gexp(QRMath.glog(this.get(i))+QRMath.glog(e.get(j)));
+return new QRPolynomial(num,0);},
+mod:function(e){if(this.getLength()-e.getLength()<0)return this;
+var ratio=QRMath.glog(this.get(0))-QRMath.glog(e.get(0));
+var num=new Array(this.getLength());
+for(var i=0;i<this.getLength();i++)num[i]=this.get(i);
+for(var i=0;i<e.getLength();i++)num[i]^=QRMath.gexp(QRMath.glog(e.get(i))+ratio);
+return new QRPolynomial(num,0).mod(e);}};
+
+var QRRSBlock=function(tc,dc){this.totalCount=tc;this.dataCount=dc;};
+QRRSBlock.RS_BLOCK_TABLE=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],
+[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],
+[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],
+[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],
+[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16]];
+QRRSBlock.getRSBlocks=function(typeNumber,ecl){
+var rb=QRRSBlock.RS_BLOCK_TABLE[(typeNumber-1)*4+ecl];
+if(rb===undefined)throw new Error("bad rs block @ typeNumber:"+typeNumber+"/ecl:"+ecl);
+var length=rb.length/3,list=[];
+for(var i=0;i<length;i++){var count=rb[i*3],tc=rb[i*3+1],dc=rb[i*3+2];
+for(var j=0;j<count;j++)list.push(new QRRSBlock(tc,dc));}
+return list;};
+
+function QRBitBuffer(){this.buffer=[];this.length=0;}
+QRBitBuffer.prototype={get:function(i){return((this.buffer[Math.floor(i/8)]>>>(7-i%8))&1)===1;},
+put:function(num,length){for(var i=0;i<length;i++)this.putBit(((num>>>(length-i-1))&1)===1);},
+getLengthInBits:function(){return this.length;},
+putBit:function(bit){var bufIndex=Math.floor(this.length/8);
+if(this.buffer.length<=bufIndex)this.buffer.push(0);
+if(bit)this.buffer[bufIndex]|=(0x80>>>(this.length%8));this.length++;}};
+
+// ECL: 0=M,1=L,2=H,3=Q  —— 这里用 M（0），平衡尺寸与容错
+var PAD0=0xEC,PAD1=0x11;
+function QRCodeModel(typeNumber,ecl){this.typeNumber=typeNumber;this.errorCorrectLevel=ecl;
+this.modules=null;this.moduleCount=0;this.dataCache=null;this.dataBytes=null;}
+QRCodeModel.prototype={
+addData:function(bytes){this.dataBytes=bytes;this.dataCache=null;},
+isDark:function(r,c){return this.modules[r][c];},
+getModuleCount:function(){return this.moduleCount;},
+make:function(){this.makeImpl(false,this.getBestMaskPattern());},
+makeImpl:function(test,maskPattern){this.moduleCount=this.typeNumber*4+17;
+this.modules=[];for(var row=0;row<this.moduleCount;row++){this.modules.push(new Array(this.moduleCount));
+for(var col=0;col<this.moduleCount;col++)this.modules[row][col]=null;}
+this.setupPositionProbePattern(0,0);this.setupPositionProbePattern(this.moduleCount-7,0);this.setupPositionProbePattern(0,this.moduleCount-7);
+this.setupPositionAdjustPattern();this.setupTimingPattern();this.setupTypeInfo(test,maskPattern);
+if(this.typeNumber>=7)this.setupTypeNumber(test);
+if(this.dataCache===null)this.dataCache=QRCodeModel.createData(this.typeNumber,this.errorCorrectLevel,this.dataBytes);
+this.mapData(this.dataCache,maskPattern);},
+setupPositionProbePattern:function(row,col){for(var r=-1;r<=7;r++){if(row+r<=-1||this.moduleCount<=row+r)continue;
+for(var c=-1;c<=7;c++){if(col+c<=-1||this.moduleCount<=col+c)continue;
+this.modules[row+r][col+c]=(0<=r&&r<=6&&(c===0||c===6))||(0<=c&&c<=6&&(r===0||r===6))||(2<=r&&r<=4&&2<=c&&c<=4);}}},
+getBestMaskPattern:function(){var minLostPoint=0,pattern=0;
+for(var i=0;i<8;i++){this.makeImpl(true,i);var lostPoint=QRUtil.getLostPoint(this);
+if(i===0||minLostPoint>lostPoint){minLostPoint=lostPoint;pattern=i;}}return pattern;},
+setupTimingPattern:function(){for(var r=8;r<this.moduleCount-8;r++){if(this.modules[r][6]!=null)continue;this.modules[r][6]=(r%2===0);}
+for(var c=8;c<this.moduleCount-8;c++){if(this.modules[6][c]!=null)continue;this.modules[6][c]=(c%2===0);}},
+setupPositionAdjustPattern:function(){var pos=QRUtil.getPatternPosition(this.typeNumber);
+for(var i=0;i<pos.length;i++)for(var j=0;j<pos.length;j++){var row=pos[i],col=pos[j];
+if(this.modules[row][col]!=null)continue;
+for(var r=-2;r<=2;r++)for(var c=-2;c<=2;c++)this.modules[row+r][col+c]=(r===-2||r===2||c===-2||c===2||(r===0&&c===0));}},
+setupTypeNumber:function(test){var bits=QRUtil.getBCHTypeNumber(this.typeNumber);
+for(var i=0;i<18;i++){var mod=(!test&&((bits>>i)&1)===1);this.modules[Math.floor(i/3)][i%3+this.moduleCount-8-3]=mod;}
+for(i=0;i<18;i++){var mod=(!test&&((bits>>i)&1)===1);this.modules[i%3+this.moduleCount-8-3][Math.floor(i/3)]=mod;}},
+setupTypeInfo:function(test,maskPattern){var data=(this.errorCorrectLevel<<3)|maskPattern;var bits=QRUtil.getBCHTypeInfo(data);
+for(var i=0;i<15;i++){var mod=(!test&&((bits>>i)&1)===1);
+if(i<6)this.modules[i][8]=mod;else if(i<8)this.modules[i+1][8]=mod;else this.modules[this.moduleCount-15+i][8]=mod;}
+for(i=0;i<15;i++){var mod=(!test&&((bits>>i)&1)===1);
+if(i<8)this.modules[8][this.moduleCount-i-1]=mod;else if(i<9)this.modules[8][15-i-1+1]=mod;else this.modules[8][15-i-1]=mod;}
+this.modules[this.moduleCount-8][8]=(!test);},
+mapData:function(data,maskPattern){var inc=-1,row=this.moduleCount-1,bitIndex=7,byteIndex=0;
+for(var col=this.moduleCount-1;col>0;col-=2){if(col===6)col--;
+while(true){for(var c=0;c<2;c++){if(this.modules[row][col-c]===null){var dark=false;
+if(byteIndex<data.length)dark=(((data[byteIndex]>>>bitIndex)&1)===1);
+var mask=QRUtil.getMask(maskPattern,row,col-c);if(mask)dark=!dark;
+this.modules[row][col-c]=dark;bitIndex--;if(bitIndex===-1){byteIndex++;bitIndex=7;}}}
+row+=inc;if(row<0||this.moduleCount<=row){row-=inc;inc=-inc;break;}}}}};
+QRCodeModel.PAD0=PAD0;QRCodeModel.PAD1=PAD1;
+QRCodeModel.createData=function(typeNumber,ecl,bytes){var rsBlocks=QRRSBlock.getRSBlocks(typeNumber,ecl);
+var buffer=new QRBitBuffer();
+buffer.put(4,4); // 8-bit byte mode
+buffer.put(bytes.length, QRUtil.getLengthInBits(typeNumber));
+for(var i=0;i<bytes.length;i++)buffer.put(bytes[i],8);
+var totalDataCount=0;for(i=0;i<rsBlocks.length;i++)totalDataCount+=rsBlocks[i].dataCount;
+if(buffer.getLengthInBits()>totalDataCount*8)throw new Error("code length overflow ("+buffer.getLengthInBits()+">"+totalDataCount*8+")");
+if(buffer.getLengthInBits()+4<=totalDataCount*8)buffer.put(0,4);
+while(buffer.getLengthInBits()%8!==0)buffer.putBit(false);
+while(true){if(buffer.getLengthInBits()>=totalDataCount*8)break;buffer.put(PAD0,8);
+if(buffer.getLengthInBits()>=totalDataCount*8)break;buffer.put(PAD1,8);}
+return QRCodeModel.createBytes(buffer,rsBlocks);};
+QRCodeModel.createBytes=function(buffer,rsBlocks){var offset=0,maxDcCount=0,maxEcCount=0;
+var dcdata=new Array(rsBlocks.length),ecdata=new Array(rsBlocks.length);
+for(var r=0;r<rsBlocks.length;r++){var dcCount=rsBlocks[r].dataCount,ecCount=rsBlocks[r].totalCount-dcCount;
+maxDcCount=Math.max(maxDcCount,dcCount);maxEcCount=Math.max(maxEcCount,ecCount);
+dcdata[r]=new Array(dcCount);
+for(var i=0;i<dcdata[r].length;i++)dcdata[r][i]=0xff&buffer.buffer[i+offset];offset+=dcCount;
+var rsPoly=QRUtil.getErrorCorrectPolynomial(ecCount);
+var rawPoly=new QRPolynomial(dcdata[r],rsPoly.getLength()-1);
+var modPoly=rawPoly.mod(rsPoly);ecdata[r]=new Array(rsPoly.getLength()-1);
+for(i=0;i<ecdata[r].length;i++){var modIndex=i+modPoly.getLength()-ecdata[r].length;ecdata[r][i]=(modIndex>=0)?modPoly.get(modIndex):0;}}
+var totalCodeCount=0;for(i=0;i<rsBlocks.length;i++)totalCodeCount+=rsBlocks[i].totalCount;
+var data=new Array(totalCodeCount),index=0;
+for(i=0;i<maxDcCount;i++)for(r=0;r<rsBlocks.length;r++)if(i<dcdata[r].length)data[index++]=dcdata[r][i];
+for(i=0;i<maxEcCount;i++)for(r=0;r<rsBlocks.length;r++)if(i<ecdata[r].length)data[index++]=ecdata[r][i];
+return data;};
+
+var QRUtil={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],
+[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90]],
+G15:0x537,G18:0x1f25,G15_MASK:0x5412,
+getBCHTypeInfo:function(data){var d=data<<10;while(QRUtil.getBCHDigit(d)-QRUtil.getBCHDigit(QRUtil.G15)>=0)d^=(QRUtil.G15<<(QRUtil.getBCHDigit(d)-QRUtil.getBCHDigit(QRUtil.G15)));
+return((data<<10)|d)^QRUtil.G15_MASK;},
+getBCHTypeNumber:function(data){var d=data<<12;while(QRUtil.getBCHDigit(d)-QRUtil.getBCHDigit(QRUtil.G18)>=0)d^=(QRUtil.G18<<(QRUtil.getBCHDigit(d)-QRUtil.getBCHDigit(QRUtil.G18)));
+return(data<<12)|d;},
+getBCHDigit:function(data){var digit=0;while(data!==0){digit++;data>>>=1;}return digit;},
+getPatternPosition:function(typeNumber){return QRUtil.PATTERN_POSITION_TABLE[typeNumber-1];},
+getMask:function(maskPattern,i,j){switch(maskPattern){
+case 0:return(i+j)%2===0;case 1:return i%2===0;case 2:return j%3===0;case 3:return(i+j)%3===0;
+case 4:return(Math.floor(i/2)+Math.floor(j/3))%2===0;case 5:return(i*j)%2+(i*j)%3===0;
+case 6:return((i*j)%2+(i*j)%3)%2===0;case 7:return((i*j)%3+(i+j)%2)%2===0;default:throw new Error("bad maskPattern:"+maskPattern);}},
+getErrorCorrectPolynomial:function(ecLength){var a=new QRPolynomial([1],0);
+for(var i=0;i<ecLength;i++)a=a.multiply(new QRPolynomial([1,QRMath.gexp(i)],0));return a;},
+getLengthInBits:function(typeNumber){return typeNumber<10?8:16;}, // 8-bit byte mode, type 1-26
+getLostPoint:function(qrCode){var moduleCount=qrCode.getModuleCount(),lostPoint=0;
+for(var row=0;row<moduleCount;row++)for(var col=0;col<moduleCount;col++){var sameCount=0,dark=qrCode.isDark(row,col);
+for(var r=-1;r<=1;r++){if(row+r<0||moduleCount<=row+r)continue;for(var c=-1;c<=1;c++){if(col+c<0||moduleCount<=col+c)continue;
+if(r===0&&c===0)continue;if(dark===qrCode.isDark(row+r,col+c))sameCount++;}}if(sameCount>5)lostPoint+=(3+sameCount-5);}
+for(row=0;row<moduleCount-1;row++)for(col=0;col<moduleCount-1;col++){var count=0;
+if(qrCode.isDark(row,col))count++;if(qrCode.isDark(row+1,col))count++;if(qrCode.isDark(row,col+1))count++;if(qrCode.isDark(row+1,col+1))count++;
+if(count===0||count===4)lostPoint+=3;}
+for(row=0;row<moduleCount;row++)for(col=0;col<moduleCount-6;col++){if(qrCode.isDark(row,col)&&!qrCode.isDark(row,col+1)&&qrCode.isDark(row,col+2)&&qrCode.isDark(row,col+3)&&qrCode.isDark(row,col+4)&&!qrCode.isDark(row,col+5)&&qrCode.isDark(row,col+6))lostPoint+=40;}
+for(col=0;col<moduleCount;col++)for(row=0;row<moduleCount-6;row++){if(qrCode.isDark(row,col)&&!qrCode.isDark(row+1,col)&&qrCode.isDark(row+2,col)&&qrCode.isDark(row+3,col)&&qrCode.isDark(row+4,col)&&!qrCode.isDark(row+5,col)&&qrCode.isDark(row+6,col))lostPoint+=40;}
+var darkCount=0;for(col=0;col<moduleCount;col++)for(row=0;row<moduleCount;row++)if(qrCode.isDark(row,col))darkCount++;
+var ratio=Math.abs(100*darkCount/moduleCount/moduleCount-50)/5;lostPoint+=ratio*10;return lostPoint;}};
+
+// UTF-8 编码（仓库 URL 是 ASCII，但稳妥起见做 UTF-8）
+function toUtf8Bytes(str){var out=[];for(var i=0;i<str.length;i++){var c=str.charCodeAt(i);
+if(c<0x80)out.push(c);else if(c<0x800){out.push(0xc0|(c>>6));out.push(0x80|(c&0x3f));}
+else{out.push(0xe0|(c>>12));out.push(0x80|((c>>6)&0x3f));out.push(0x80|(c&0x3f));}}return out;}
+
+// 自动选型：从 type1 起找能容纳数据的最小版本（ECL=M）
+function buildQR(text){var bytes=toUtf8Bytes(text);var ecl=0; // M
+for(var t=1;t<=20;t++){try{var m=new QRCodeModel(t,ecl);m.addData(bytes);m.make();return m;}catch(e){/*容量不够，升一版*/}}
+throw new Error('QR: text too long');}
+
+// 暴露：把 URL 画成 canvas（白底黑点，带 quiet zone）
+window.makeQRCanvas=function(text,sizePx){
+var qr=buildQR(text);var count=qr.getModuleCount();var quiet=4;var total=count+quiet*2;
+var scale=Math.max(2,Math.floor(sizePx/total));var px=total*scale;
+var cv=document.createElement('canvas');cv.width=px;cv.height=px;
+var ctx=cv.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,px,px);ctx.fillStyle='#0b0f14';
+for(var r=0;r<count;r++)for(var c=0;c<count;c++){if(qr.isDark(r,c)){ctx.fillRect((c+quiet)*scale,(r+quiet)*scale,scale,scale);}}
+// 暴露给自检：模块数 & 暗块数
+cv._qrModuleCount=count;return cv;};
+// 给自检脚本用：返回矩阵信息
+window.__qrSelfTest=function(text){var qr=buildQR(text);var n=qr.getModuleCount();var dark=0;
+for(var r=0;r<n;r++)for(var c=0;c<n;c++)if(qr.isDark(r,c))dark++;
+// 三个定位块角落应为暗（左上(0,0)、右上(0,n-1)、左下(n-1,0)）
+var corners=qr.isDark(0,0)&&qr.isDark(0,n-1)&&qr.isDark(n-1,0);
+return {moduleCount:n,darkCount:dark,findersDark:corners};};
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+  var deck = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var dotsWrap = document.getElementById('dots');
+  var progress = document.getElementById('progress');
+  var current = 0;
+
+  // ---- 右侧圆点导航 ----
+  slides.forEach(function(s, i){
+    var b = document.createElement('button');
+    b.setAttribute('aria-label', (s.dataset.name || ('第'+(i+1)+'屏')));
+    b.title = s.dataset.name || '';
+    b.addEventListener('click', function(){ goTo(i); });
+    dotsWrap.appendChild(b);
+  });
+  var dots = Array.prototype.slice.call(dotsWrap.children);
+
+  function goTo(i){
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    slides[i].scrollIntoView({behavior:'smooth'});
+  }
+
+  // ---- 进场动画 + 当前屏跟踪（IntersectionObserver）----
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.classList.add('in');
+        var idx = slides.indexOf(e.target);
+        if(e.intersectionRatio >= 0.5){
+          current = idx;
+          dots.forEach(function(d,di){ d.classList.toggle('active', di===idx); });
+          if(e.target.id === 'repair-slide'){ playRepair(); }
+        }
+      }
+    });
+  }, {threshold:[0.25, 0.5, 0.75]});
+  slides.forEach(function(s){ io.observe(s); });
+  dots[0] && dots[0].classList.add('active');
+
+  // ---- 顶部进度条 ----
+  function updateProgress(){
+    var max = deck.scrollHeight - deck.clientHeight;
+    var p = max > 0 ? (deck.scrollTop / max) * 100 : 0;
+    progress.style.width = p + '%';
+  }
+  deck.addEventListener('scroll', updateProgress, {passive:true});
+  updateProgress();
+
+  // ---- 键盘翻页 ----
+  document.addEventListener('keydown', function(ev){
+    var k = ev.key;
+    if(k===' '||k==='ArrowDown'||k==='PageDown'){ ev.preventDefault(); goTo(current+1); }
+    else if(k==='ArrowUp'||k==='PageUp'){ ev.preventDefault(); goTo(current-1); }
+    else if(k==='ArrowRight'){ ev.preventDefault(); goTo(current+1); }
+    else if(k==='ArrowLeft'){ ev.preventDefault(); goTo(current-1); }
+    else if(k==='Home'){ ev.preventDefault(); goTo(0); }
+    else if(k==='End'){ ev.preventDefault(); goTo(slides.length-1); }
+  });
+
+  // ---- 第6屏：自修复 diff 动画（只播一次）----
+  var repairPlayed = false;
+  function playRepair(){
+    if(repairPlayed) return; repairPlayed = true;
+    var bad = document.getElementById('card-bad');
+    var pops = document.querySelectorAll('#card-good [data-pop]');
+    var stamp = document.getElementById('ok-stamp');
+    setTimeout(function(){ bad && bad.classList.add('shake'); }, 350);
+    setTimeout(function(){
+      pops.forEach(function(el, i){
+        setTimeout(function(){ el.classList.add('pop'); }, i*260);
+      });
+    }, 950);
+    setTimeout(function(){ stamp && stamp.classList.add('show'); }, 950 + pops.length*260 + 200);
+  }
+
+  // ---- 生成仓库二维码（库就绪才画；失败则回退为链接文字）----
+  function drawQR(){
+    var box = document.getElementById('qrbox');
+    if(!box) return;
+    var url = 'https://gitee.com/bai-zhuokun/xin-migrate';
+    try{
+      if(typeof window.makeQRCanvas === 'function'){
+        var cv = window.makeQRCanvas(url, 132);
+        box.innerHTML = ''; box.appendChild(cv);
+      } else { throw new Error('QR lib missing'); }
+    }catch(e){
+      box.innerHTML = '<div style="padding:8px;color:#0b0f14;font:600 11px monospace;max-width:140px;word-break:break-all">'+url+'</div>';
+    }
+  }
+  drawQR();
+})();
+</script>
+</body>
+</html>
