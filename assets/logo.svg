@@ -1,0 +1,51 @@
+<svg width="520" height="150" viewBox="0 0 520 150" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="信迁 Agent 标志">
+  <defs>
+    <linearGradient id="plate" x1="0" y1="0" x2="520" y2="150" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F1822"/><stop offset="1" stop-color="#0A0F14"/>
+    </linearGradient>
+    <linearGradient id="lacc" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#3BF5C0"/><stop offset="1" stop-color="#00C48F"/>
+    </linearGradient>
+    <filter id="lglow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- 整块深色底板：保证 logo 放在任意背景上文字都清晰 -->
+  <rect x="1" y="1" width="518" height="148" rx="26" fill="url(#plate)" stroke="#00E0A4" stroke-opacity="0.4" stroke-width="2"/>
+
+  <!-- ===== 左侧图标 ===== -->
+  <g transform="translate(26,29)">
+    <g stroke="#5C6B7A" stroke-width="3.2" fill="none" stroke-linecap="round" opacity="0.9">
+      <ellipse cx="18" cy="20" rx="15" ry="5.5"/>
+      <path d="M3 20 V46 a15 5.5 0 0 0 30 0 V20"/>
+      <path d="M3 33 a15 5.5 0 0 0 30 0"/>
+    </g>
+    <g filter="url(#lglow)">
+      <path d="M27 64 H53" stroke="url(#lacc)" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M48 56 L61 64 L48 72 Z" fill="url(#lacc)"/>
+    </g>
+    <g stroke="url(#lacc)" stroke-width="3.5" fill="none" stroke-linecap="round" filter="url(#lglow)">
+      <ellipse cx="66" cy="16" rx="16" ry="6"/>
+      <path d="M50 16 V44 a16 6 0 0 0 32 0 V16"/>
+      <path d="M50 30 a16 6 0 0 0 32 0"/>
+    </g>
+  </g>
+
+  <!-- 竖向分隔线 -->
+  <line x1="138" y1="36" x2="138" y2="114" stroke="#1f2c38" stroke-width="2"/>
+
+  <!-- ===== 文字 ===== -->
+  <text x="162" y="70" font-family="'PingFang SC','Microsoft YaHei','Hiragino Sans GB',sans-serif"
+        font-size="52" font-weight="800" fill="#F2FBF7" letter-spacing="3">信迁</text>
+  <text x="284" y="70" font-family="'PingFang SC',sans-serif" font-size="30" font-weight="700" fill="url(#lacc)">Agent</text>
+
+  <text x="164" y="100" font-family="'SFMono-Regular',Consolas,monospace" font-size="15"
+        fill="#90A6AE" letter-spacing="0.3">XinMigrate · 代码不出域，迁移自动化</text>
+
+  <g transform="translate(164,113)">
+    <circle cx="5" cy="3" r="3.5" fill="#00E0A4" filter="url(#lglow)"/>
+    <text x="16" y="7" font-family="'PingFang SC',sans-serif" font-size="12.5" fill="#7CF2B8" font-weight="600">纯内网离线运行 · Oracle → 达梦 / 金仓</text>
+  </g>
+</svg>

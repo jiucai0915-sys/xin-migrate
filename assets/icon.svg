@@ -1,0 +1,43 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="信迁 Agent 图标">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0E1620"/>
+      <stop offset="1" stop-color="#0A0F14"/>
+    </linearGradient>
+    <linearGradient id="acc" x1="20" y1="30" x2="108" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3BF5C0"/>
+      <stop offset="1" stop-color="#00C48F"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- 圆角深色底 + 霓虹描边 -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg)" stroke="#00E0A4" stroke-opacity="0.45" stroke-width="2"/>
+
+  <!-- 源数据库（左·暗，代表 Oracle 旧栈） -->
+  <g stroke="#5C6B7A" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="0.9">
+    <ellipse cx="40" cy="44" rx="17" ry="6"/>
+    <path d="M23 44 V72 a17 6 0 0 0 34 0 V44"/>
+    <path d="M23 58 a17 6 0 0 0 34 0"/>
+  </g>
+
+  <!-- 迁移箭头（霓虹青绿·发光） -->
+  <g filter="url(#glow)">
+    <path d="M50 90 H78" stroke="url(#acc)" stroke-width="7" stroke-linecap="round"/>
+    <path d="M72 81 L86 90 L72 99 Z" fill="url(#acc)"/>
+  </g>
+
+  <!-- 目标数据库（右·亮·国产新栈） -->
+  <g stroke="url(#acc)" stroke-width="3.8" fill="none" stroke-linecap="round" filter="url(#glow)">
+    <ellipse cx="90" cy="40" rx="18" ry="6.5"/>
+    <path d="M72 40 V70 a18 6.5 0 0 0 36 0 V40"/>
+    <path d="M72 55 a18 6.5 0 0 0 36 0"/>
+  </g>
+
+  <!-- 内网安全：盾形小徽（右下角） -->
+  <path d="M98 96 l9 3 v6 c0 5 -4 8 -9 10 c-5 -2 -9 -5 -9 -10 v-6 z" fill="#0A0F14" stroke="url(#acc)" stroke-width="2.4"/>
+  <path d="M94.5 107.5 l3 3 l5.5 -6" stroke="url(#acc)" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
