@@ -157,8 +157,8 @@ def run_events(task: str, max_steps: int = 25):
         result = dispatch(name, args)
         yield {"type": "tool_result", "step": step, "name": name, "result": result}
 
-        # 验证失败计数：连续多次改不对则优雅收尾（输出已完成部分），不空转到上限
-        if name == "run_validation":
+        # 验证失败计数：run_validation / run_semantic_test 连续多次改不对则优雅收尾，不空转到上限
+        if name in ("run_validation", "run_semantic_test"):
             if result.get("ok") is False:
                 val_fails += 1
             elif result.get("ok") is True:
