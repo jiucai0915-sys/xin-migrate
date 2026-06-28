@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>信迁 Agent · 进场动画</title>
+<style>
+  :root{
+    --accent:#00E0A4; --accent2:#3BF5C0; --dim:#5C6B7A;
+    --bg0:#070B10; --bg1:#0E1620;
+    /* 苹果发布会式缓动：慢起步、长尾收尾 */
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:var(--bg0);overflow:hidden;
+    font-family:'PingFang SC','Microsoft YaHei','Hiragino Sans GB',-apple-system,sans-serif;}
+
+  .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(120% 120% at 50% 38%, #11202b 0%, var(--bg1) 38%, var(--bg0) 100%);}
+
+  /* 背景泛光：缓慢呼吸 */
+  .bloom{position:absolute;width:780px;height:780px;border-radius:50%;
+    background:radial-gradient(circle, rgba(0,224,164,.16), rgba(0,224,164,0) 62%);
+    filter:blur(14px);opacity:0;transform:scale(.7);
+    animation:bloomIn 2.4s var(--ease) .1s forwards, breathe 6s ease-in-out 2.6s infinite;}
+  @keyframes bloomIn{to{opacity:1;transform:scale(1)}}
+  @keyframes breathe{0%,100%{opacity:.85;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+
+  /* 细网格：信创/科技底纹，极淡 */
+  .grid{position:absolute;inset:0;opacity:0;
+    background-image:linear-gradient(rgba(0,224,164,.05) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(0,224,164,.05) 1px,transparent 1px);
+    background-size:46px 46px;mask-image:radial-gradient(circle at 50% 45%,#000 30%,transparent 72%);
+    animation:gridIn 2.6s var(--ease) .3s forwards;}
+  @keyframes gridIn{to{opacity:1}}
+
+  .lockup{position:relative;display:flex;align-items:center;gap:34px;padding:0 24px;
+    transform:translateY(8px);}
+
+  /* ===== 图标 [ ▸ ] ===== */
+  .icon{width:120px;height:120px;flex:none;filter:drop-shadow(0 0 18px rgba(0,224,164,.0));
+    animation:iconGlow 1.2s var(--ease) 1.6s forwards;}
+  @keyframes iconGlow{to{filter:drop-shadow(0 0 22px rgba(0,224,164,.45))}}
+  .brk{stroke-dasharray:200;stroke-dashoffset:200;}
+  .brk.l{animation:draw .9s var(--ease) .5s forwards;}
+  .brk.r{animation:draw .9s var(--ease) .8s forwards;}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .arrow{opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.4);}
+  .arrow{animation:pop .7s var(--ease) 1.25s forwards;}
+  @keyframes pop{60%{opacity:1;transform:scale(1.18)}100%{opacity:1;transform:scale(1)}}
+
+  /* ===== 文字 ===== */
+  .text{display:flex;flex-direction:column;gap:6px}
+  .row1{display:flex;align-items:baseline;gap:16px}
+  .zh{font-size:74px;font-weight:800;letter-spacing:6px;color:#F2FBF7;display:flex}
+  .zh span{display:inline-block;opacity:0;filter:blur(16px);transform:translateY(18px);
+    animation:blurIn .9s var(--ease) forwards;}
+  .zh span:nth-child(1){animation-delay:1.55s}
+  .zh span:nth-child(2){animation-delay:1.72s}
+  .en{font-size:40px;font-weight:700;letter-spacing:1px;
+    background:linear-gradient(120deg,var(--accent2),var(--accent));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    opacity:0;filter:blur(14px);transform:translateY(14px);
+    animation:blurIn .9s var(--ease) 1.95s forwards;}
+  .tag{font-size:18px;color:#90A6AE;letter-spacing:.5px;font-family:'SFMono-Regular',Consolas,monospace;
+    opacity:0;filter:blur(12px);transform:translateY(12px);
+    animation:blurIn .9s var(--ease) 2.25s forwards;}
+  .sub{display:flex;align-items:center;gap:9px;font-size:14.5px;color:#7CF2B8;font-weight:600;
+    opacity:0;transform:translateY(10px);animation:fadeUp .9s var(--ease) 2.5s forwards;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 10px var(--accent);animation:pulse 2.4s ease-in-out 3s infinite;}
+
+  @keyframes blurIn{to{opacity:1;filter:blur(0);transform:translateY(0)}}
+  @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+  @keyframes pulse{0%,100%{box-shadow:0 0 8px var(--accent)}50%{box-shadow:0 0 18px var(--accent)}}
+
+  /* 光泽扫过(苹果式 shine)：在文字出现后扫一道高光 */
+  .shine{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:20px}
+  .shine::after{content:"";position:absolute;top:-40%;left:-60%;width:40%;height:180%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.14),transparent);
+    transform:skewX(-18deg);animation:sweep 1.6s var(--ease) 2.9s 1;}
+  @keyframes sweep{from{left:-60%}to{left:130%}}
+
+  /* 重播按钮 */
+  .replay{position:fixed;right:18px;bottom:16px;color:#5C6B7A;font-size:13px;
+    border:1px solid #1f2c38;border-radius:20px;padding:6px 14px;cursor:pointer;
+    background:rgba(20,27,36,.6);user-select:none;transition:.2s;opacity:0;animation:fadeUp .6s 3.4s forwards}
+  .replay:hover{color:var(--accent2);border-color:var(--accent)}
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="bloom"></div>
+    <div class="grid"></div>
+    <div class="lockup">
+      <div class="shine"></div>
+      <!-- 图标：代码括号迁移 -->
+      <svg class="icon" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="ia" x1="20" y1="20" x2="100" y2="100">
+            <stop stop-color="#3BF5C0"/><stop offset="1" stop-color="#00C48F"/>
+          </linearGradient>
+        </defs>
+        <path class="brk l" d="M40 22 H22 V98 H40" stroke="#5C6B7A" stroke-width="7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <g class="arrow">
+          <path d="M48 60 H72" stroke="url(#ia)" stroke-width="7" stroke-linecap="round"/>
+          <path d="M66 50 L84 60 L66 70 Z" fill="url(#ia)"/>
+        </g>
+        <path class="brk r" d="M80 22 H98 V98 H80" stroke="url(#ia)" stroke-width="7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <!-- 文字 -->
+      <div class="text">
+        <div class="row1">
+          <div class="zh"><span>信</span><span>迁</span></div>
+          <div class="en">Agent</div>
+        </div>
+        <div class="tag">XinMigrate · 代码不出域，迁移自动化</div>
+        <div class="sub"><span class="dot"></span>纯内网离线运行 · Oracle → 达梦 / 金仓</div>
+      </div>
+    </div>
+    <div class="replay" onclick="replay()">↺ 重播</div>
+  </div>
+<script>
+  // 重播：克隆 stage 强制重置所有 CSS 动画
+  function replay(){
+    const s=document.getElementById('stage');
+    const c=s.cloneNode(true);
+    s.parentNode.replaceChild(c,s);
+  }
+</script>
+</body>
+</html>
