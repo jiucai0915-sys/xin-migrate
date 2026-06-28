@@ -27,7 +27,9 @@ ollama pull qwen2.5-coder:7b      # 机器弱用 7b，强机用 32b
 cp .env.example .env              # 按需改 .env
 
 # 5. 跑一把 Demo
-python -m agent.loop --task "把 data/demo_project 里的 Oracle SQL 迁移到达梦"
+# 5. 跑一把 Demo（任务措辞越明确，端侧 7b 越听话）
+python -m agent.loop --task "用 read_file 工具读取 data/demo_project/legacy_oracle.sql 的内容，再用 grep_dialect 扫描 Oracle 不兼容语法，逐项查规则迁移到达梦并用 run_validation 验证，验证失败时按报错修复指令重写完整SQL，全部通过后输出迁移报告"
+# 注：界面演示请用 streamlit run web/app.py，现场建议「离线回放」模式最稳
 ```
 
 ---
