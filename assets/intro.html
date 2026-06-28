@@ -13,38 +13,47 @@
   #gl{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;
     animation:glIn 1.8s var(--ease) .1s forwards}
   @keyframes glIn{to{opacity:1}}
-  /* 文字可读性：中心暗角 */
+  /* 文字可读性：中心暗角 + 入场时整体轻微变暗 */
   .scrim{position:absolute;inset:0;pointer-events:none;
     background:radial-gradient(60% 50% at 50% 50%, rgba(4,8,11,.55), rgba(4,8,11,0) 70%)}
+  .veil{position:absolute;inset:0;pointer-events:none;background:#040809;opacity:0;
+    animation:veilIn 1.2s var(--ease) 1.2s forwards}
+  @keyframes veilIn{to{opacity:.28}}
 
   .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5}
-  .lockup{position:relative;display:flex;align-items:center;gap:34px;padding:0 24px}
+  /* 整组轻微上浮+放大收尾，一气呵成 */
+  .lockup{position:relative;display:flex;align-items:center;gap:34px;padding:0 24px;
+    opacity:0;transform:translateY(14px) scale(.985);
+    animation:lockIn 1.4s var(--ease) 1.15s forwards}
+  @keyframes lockIn{to{opacity:1;transform:translateY(0) scale(1)}}
   .icon{width:120px;height:120px;flex:none;filter:drop-shadow(0 0 0 rgba(0,224,164,0));
-    animation:iconGlow 1.2s var(--ease) 1.8s forwards}
-  @keyframes iconGlow{to{filter:drop-shadow(0 0 26px rgba(0,224,164,.55))}}
+    animation:iconGlow 1.4s var(--ease) 1.7s forwards}
+  @keyframes iconGlow{to{filter:drop-shadow(0 0 26px rgba(0,224,164,.5))}}
   .brk{stroke-dasharray:200;stroke-dashoffset:200}
-  .brk.l{animation:draw .9s var(--ease) .7s forwards}
-  .brk.r{animation:draw .9s var(--ease) 1.0s forwards}
+  .brk.l{animation:draw 1.0s var(--ease) .55s forwards}
+  .brk.r{animation:draw 1.0s var(--ease) .8s forwards}
   @keyframes draw{to{stroke-dashoffset:0}}
-  .arrow{opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.4);
-    animation:pop .7s var(--ease) 1.45s forwards}
-  @keyframes pop{60%{opacity:1;transform:scale(1.18)}100%{opacity:1;transform:scale(1)}}
+  /* 箭头：柔和淡入，无过冲 */
+  .arrow{opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.7);
+    animation:arrowIn .8s var(--ease) 1.2s forwards}
+  @keyframes arrowIn{to{opacity:1;transform:scale(1)}}
   .text{display:flex;flex-direction:column;gap:6px}
   .row1{display:flex;align-items:baseline;gap:16px}
   .zh{font-size:74px;font-weight:800;letter-spacing:6px;color:#F2FBF7;display:flex;
     text-shadow:0 2px 36px rgba(0,224,164,.25)}
-  .zh span{display:inline-block;opacity:0;filter:blur(16px);transform:translateY(18px);
-    animation:blurIn .9s var(--ease) forwards}
-  .zh span:nth-child(1){animation-delay:1.75s}
-  .zh span:nth-child(2){animation-delay:1.92s}
+  /* 文字渐入：轻模糊 + 小位移，柔和 */
+  .zh span{display:inline-block;opacity:0;filter:blur(6px);transform:translateY(9px);
+    animation:blurIn 1.0s var(--ease) forwards}
+  .zh span:nth-child(1){animation-delay:1.55s}
+  .zh span:nth-child(2){animation-delay:1.66s}
   .en{font-size:40px;font-weight:700;letter-spacing:1px;
     background:linear-gradient(120deg,var(--accent2),var(--accent));
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    opacity:0;filter:blur(14px);transform:translateY(14px);animation:blurIn .9s var(--ease) 2.15s forwards}
+    opacity:0;filter:blur(6px);transform:translateY(8px);animation:blurIn 1.0s var(--ease) 1.82s forwards}
   .tag{font-size:18px;color:#cfe0e4;letter-spacing:.5px;font-family:'SFMono-Regular',Consolas,monospace;
-    opacity:0;filter:blur(12px);transform:translateY(12px);animation:blurIn .9s var(--ease) 2.45s forwards}
+    opacity:0;filter:blur(5px);transform:translateY(7px);animation:blurIn 1.0s var(--ease) 2.0s forwards}
   .sub{display:flex;align-items:center;gap:9px;font-size:14.5px;color:#7CF2B8;font-weight:600;
-    opacity:0;transform:translateY(10px);animation:fadeUp .9s var(--ease) 2.7s forwards}
+    opacity:0;transform:translateY(7px);animation:fadeUp 1.0s var(--ease) 2.18s forwards}
   .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);
     box-shadow:0 0 10px var(--accent);animation:pulse 2.4s ease-in-out 3.2s infinite}
   @keyframes blurIn{to{opacity:1;filter:blur(0);transform:translateY(0)}}
@@ -52,8 +61,8 @@
   @keyframes pulse{0%,100%{box-shadow:0 0 8px var(--accent)}50%{box-shadow:0 0 18px var(--accent)}}
   .shine{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:20px;z-index:6}
   .shine::after{content:"";position:absolute;top:-40%;left:-60%;width:38%;height:180%;
-    background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);
-    transform:skewX(-18deg);animation:sweep 1.6s var(--ease) 3.0s 1}
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.12),transparent);
+    transform:skewX(-18deg);animation:sweep 1.8s var(--ease) 2.9s 1}
   @keyframes sweep{to{left:130%}}
   .replay{position:fixed;right:18px;bottom:16px;color:#5C6B7A;font-size:13px;z-index:9;
     border:1px solid #1f2c38;border-radius:20px;padding:6px 14px;cursor:pointer;
@@ -67,6 +76,7 @@
   <div class="stage">
     <canvas id="gl"></canvas>
     <div class="fallback" id="fallback"></div>
+    <div class="veil"></div>
     <div class="scrim"></div>
     <div class="center">
       <div class="lockup">
