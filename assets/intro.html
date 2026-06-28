@@ -3,63 +3,25 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>信迁 Agent · 进场动画（Lightfall）</title>
+<title>信迁 Agent · 进场动画（Lightfall 原版复刻）</title>
 <style>
-  :root{
-    --accent:#00E0A4; --accent2:#3BF5C0; --dim:#5C6B7A;
-    --bg0:#070B10; --bg1:#0E1620;
-    --ease:cubic-bezier(.16,1,.3,1);
-  }
+  :root{ --accent:#00E0A4; --accent2:#3BF5C0; --ease:cubic-bezier(.16,1,.3,1); }
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%;background:var(--bg0);overflow:hidden;
+  html,body{height:100%;background:#060A0E;overflow:hidden;
     font-family:'PingFang SC','Microsoft YaHei','Hiragino Sans GB',-apple-system,sans-serif;}
-  .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(130% 100% at 50% -10%, #13212c 0%, var(--bg1) 42%, var(--bg0) 100%);}
+  .stage{position:fixed;inset:0;overflow:hidden}
+  #gl{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;
+    animation:glIn 1.8s var(--ease) .1s forwards}
+  @keyframes glIn{to{opacity:1}}
+  /* 文字可读性：中心暗角 */
+  .scrim{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(60% 50% at 50% 50%, rgba(4,8,11,.55), rgba(4,8,11,0) 70%)}
 
-  /* ===== Lightfall 背景：顶部倾泻的光束 + 飘落光丝 ===== */
-  .lightfall{position:absolute;inset:0;overflow:hidden;opacity:0;
-    animation:lfIn 2.2s var(--ease) .1s forwards;}
-  @keyframes lfIn{to{opacity:1}}
-
-  /* 顶部光源辉光 */
-  .lightfall::before{content:"";position:absolute;top:-30%;left:50%;transform:translateX(-50%);
-    width:120%;height:80%;
-    background:radial-gradient(60% 60% at 50% 0%, rgba(0,224,164,.20), rgba(0,224,164,0) 70%);
-    filter:blur(10px);}
-
-  /* 光束（god-rays）：从顶部呈扇形垂落，缓慢摆动 */
-  .beam{position:absolute;top:-12%;height:128%;width:160px;transform-origin:top center;
-    background:linear-gradient(180deg, rgba(0,224,164,0) 0%, rgba(0,224,164,.22) 32%, rgba(59,245,192,.05) 70%, rgba(0,224,164,0) 100%);
-    filter:blur(30px);mix-blend-mode:screen;animation:sway 9s ease-in-out infinite;}
-  .beam.b1{left:24%;transform:rotate(-12deg);animation-delay:-1s;opacity:.9}
-  .beam.b2{left:42%;transform:rotate(-4deg);width:200px;animation-delay:-3.5s}
-  .beam.b3{left:56%;transform:rotate(5deg);width:180px;animation-delay:-6s;opacity:.85}
-  .beam.b4{left:70%;transform:rotate(13deg);width:140px;animation-delay:-2s;opacity:.7}
-  @keyframes sway{0%,100%{transform:translateX(-14px) rotate(var(--r,0deg));opacity:.55}
-    50%{transform:translateX(14px) rotate(var(--r,0deg));opacity:1}}
-  .beam.b1{--r:-12deg}.beam.b2{--r:-4deg}.beam.b3{--r:5deg}.beam.b4{--r:13deg}
-
-  /* 飘落光丝（lightfall 雨）：JS 生成 */
-  .fall{position:absolute;inset:0}
-  .streak{position:absolute;top:-160px;width:1.6px;border-radius:2px;
-    background:linear-gradient(180deg, rgba(59,245,192,0), rgba(59,245,192,.85), rgba(0,224,164,0));
-    filter:blur(.4px);animation:fallDown linear infinite;}
-  @keyframes fallDown{
-    0%{transform:translateY(-160px);opacity:0}
-    10%{opacity:1}85%{opacity:1}
-    100%{transform:translateY(108vh);opacity:0}}
-
-  /* 极淡底纹网格 */
-  .grid{position:absolute;inset:0;opacity:.5;
-    background-image:linear-gradient(rgba(0,224,164,.045) 1px,transparent 1px),
-                     linear-gradient(90deg,rgba(0,224,164,.045) 1px,transparent 1px);
-    background-size:48px 48px;mask-image:radial-gradient(circle at 50% 42%,#000 28%,transparent 74%);}
-
-  /* ===== logo 揭幕（保留原 blur-text 苹果风） ===== */
-  .lockup{position:relative;z-index:5;display:flex;align-items:center;gap:34px;padding:0 24px}
-  .icon{width:120px;height:120px;flex:none;
-    animation:iconGlow 1.2s var(--ease) 1.8s forwards;filter:drop-shadow(0 0 0 rgba(0,224,164,0))}
-  @keyframes iconGlow{to{filter:drop-shadow(0 0 24px rgba(0,224,164,.5))}}
+  .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5}
+  .lockup{position:relative;display:flex;align-items:center;gap:34px;padding:0 24px}
+  .icon{width:120px;height:120px;flex:none;filter:drop-shadow(0 0 0 rgba(0,224,164,0));
+    animation:iconGlow 1.2s var(--ease) 1.8s forwards}
+  @keyframes iconGlow{to{filter:drop-shadow(0 0 26px rgba(0,224,164,.55))}}
   .brk{stroke-dasharray:200;stroke-dashoffset:200}
   .brk.l{animation:draw .9s var(--ease) .7s forwards}
   .brk.r{animation:draw .9s var(--ease) 1.0s forwards}
@@ -67,11 +29,10 @@
   .arrow{opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.4);
     animation:pop .7s var(--ease) 1.45s forwards}
   @keyframes pop{60%{opacity:1;transform:scale(1.18)}100%{opacity:1;transform:scale(1)}}
-
   .text{display:flex;flex-direction:column;gap:6px}
   .row1{display:flex;align-items:baseline;gap:16px}
   .zh{font-size:74px;font-weight:800;letter-spacing:6px;color:#F2FBF7;display:flex;
-    text-shadow:0 2px 30px rgba(0,224,164,.18)}
+    text-shadow:0 2px 36px rgba(0,224,164,.25)}
   .zh span{display:inline-block;opacity:0;filter:blur(16px);transform:translateY(18px);
     animation:blurIn .9s var(--ease) forwards}
   .zh span:nth-child(1){animation-delay:1.75s}
@@ -79,9 +40,8 @@
   .en{font-size:40px;font-weight:700;letter-spacing:1px;
     background:linear-gradient(120deg,var(--accent2),var(--accent));
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    opacity:0;filter:blur(14px);transform:translateY(14px);
-    animation:blurIn .9s var(--ease) 2.15s forwards}
-  .tag{font-size:18px;color:#9fb3ba;letter-spacing:.5px;font-family:'SFMono-Regular',Consolas,monospace;
+    opacity:0;filter:blur(14px);transform:translateY(14px);animation:blurIn .9s var(--ease) 2.15s forwards}
+  .tag{font-size:18px;color:#cfe0e4;letter-spacing:.5px;font-family:'SFMono-Regular',Consolas,monospace;
     opacity:0;filter:blur(12px);transform:translateY(12px);animation:blurIn .9s var(--ease) 2.45s forwards}
   .sub{display:flex;align-items:center;gap:9px;font-size:14.5px;color:#7CF2B8;font-weight:600;
     opacity:0;transform:translateY(10px);animation:fadeUp .9s var(--ease) 2.7s forwards}
@@ -90,71 +50,137 @@
   @keyframes blurIn{to{opacity:1;filter:blur(0);transform:translateY(0)}}
   @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
   @keyframes pulse{0%,100%{box-shadow:0 0 8px var(--accent)}50%{box-shadow:0 0 18px var(--accent)}}
-
   .shine{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:20px;z-index:6}
   .shine::after{content:"";position:absolute;top:-40%;left:-60%;width:38%;height:180%;
     background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);
     transform:skewX(-18deg);animation:sweep 1.6s var(--ease) 3.0s 1}
   @keyframes sweep{to{left:130%}}
-
   .replay{position:fixed;right:18px;bottom:16px;color:#5C6B7A;font-size:13px;z-index:9;
     border:1px solid #1f2c38;border-radius:20px;padding:6px 14px;cursor:pointer;
     background:rgba(20,27,36,.6);user-select:none;opacity:0;animation:fadeUp .6s 3.6s forwards;transition:.2s}
   .replay:hover{color:var(--accent2);border-color:var(--accent)}
+  .fallback{position:absolute;inset:0;display:none;background:
+    radial-gradient(130% 100% at 50% -10%, #13212c, #0E1620 42%, #070B10)}
 </style>
 </head>
 <body>
-  <div class="stage" id="stage">
-    <div class="lightfall">
-      <div class="beam b1"></div><div class="beam b2"></div>
-      <div class="beam b3"></div><div class="beam b4"></div>
-      <div class="fall" id="fall"></div>
-    </div>
-    <div class="grid"></div>
-
-    <div class="lockup">
-      <div class="shine"></div>
-      <svg class="icon" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs><linearGradient id="ia" x1="20" y1="20" x2="100" y2="100">
-          <stop stop-color="#3BF5C0"/><stop offset="1" stop-color="#00C48F"/></linearGradient></defs>
-        <path class="brk l" d="M40 22 H22 V98 H40" stroke="#5C6B7A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-        <g class="arrow">
-          <path d="M48 60 H72" stroke="url(#ia)" stroke-width="7" stroke-linecap="round"/>
-          <path d="M66 50 L84 60 L66 70 Z" fill="url(#ia)"/>
-        </g>
-        <path class="brk r" d="M80 22 H98 V98 H80" stroke="url(#ia)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <div class="text">
-        <div class="row1"><div class="zh"><span>信</span><span>迁</span></div><div class="en">Agent</div></div>
-        <div class="tag">XinMigrate · 代码不出域，迁移自动化</div>
-        <div class="sub"><span class="dot"></span>纯内网离线运行 · Oracle → 达梦 / 金仓</div>
+  <div class="stage">
+    <canvas id="gl"></canvas>
+    <div class="fallback" id="fallback"></div>
+    <div class="scrim"></div>
+    <div class="center">
+      <div class="lockup">
+        <div class="shine"></div>
+        <svg class="icon" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="ia" x1="20" y1="20" x2="100" y2="100">
+            <stop stop-color="#3BF5C0"/><stop offset="1" stop-color="#00C48F"/></linearGradient></defs>
+          <path class="brk l" d="M40 22 H22 V98 H40" stroke="#5C6B7A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+          <g class="arrow"><path d="M48 60 H72" stroke="url(#ia)" stroke-width="7" stroke-linecap="round"/>
+            <path d="M66 50 L84 60 L66 70 Z" fill="url(#ia)"/></g>
+          <path class="brk r" d="M80 22 H98 V98 H80" stroke="url(#ia)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="text">
+          <div class="row1"><div class="zh"><span>信</span><span>迁</span></div><div class="en">Agent</div></div>
+          <div class="tag">XinMigrate · 代码不出域，迁移自动化</div>
+          <div class="sub"><span class="dot"></span>纯内网离线运行 · Oracle → 达梦 / 金仓</div>
+        </div>
       </div>
     </div>
-    <div class="replay" onclick="replay()">↺ 重播</div>
+    <div class="replay" onclick="location.reload()">↺ 重播</div>
   </div>
+
 <script>
-  // 生成飘落光丝（lightfall 雨）
-  function seedStreaks(root){
-    const fall=root.querySelector('#fall'); if(!fall) return;
-    const N=34;
-    for(let i=0;i<N;i++){
-      const s=document.createElement('div'); s.className='streak';
-      const h=60+Math.random()*110;
-      s.style.left=(Math.random()*100)+'%';
-      s.style.height=h+'px';
-      s.style.opacity=(0.25+Math.random()*0.6).toFixed(2);
-      s.style.animationDuration=(3.2+Math.random()*4.5).toFixed(2)+'s';
-      s.style.animationDelay=(-Math.random()*7).toFixed(2)+'s';
-      fall.appendChild(s);
-    }
-  }
-  seedStreaks(document);
-  function replay(){
-    const s=document.getElementById('stage');
-    const c=s.cloneNode(true);
-    s.parentNode.replaceChild(c,s);
-    seedStreaks(c);
-  }
+/* ===== Lightfall 原版 GLSL（来自 reactbits / DavidHDev/react-bits，原样搬运）===== */
+const vertex = `attribute vec2 position;attribute vec2 uv;varying vec2 vUv;
+void main(){vUv=uv;gl_Position=vec4(position,0.0,1.0);}`;
+
+const fragment = `precision highp float;
+uniform vec3 iResolution;uniform vec2 iMouse;uniform float iTime;
+uniform vec3 uColor0,uColor1,uColor2,uColor3,uColor4,uColor5,uColor6,uColor7;
+uniform int uColorCount;uniform vec3 uBgColor;uniform vec3 uMouseColor;
+uniform float uSpeed;uniform int uStreakCount;uniform float uStreakWidth;uniform float uStreakLength;
+uniform float uGlow;uniform float uDensity;uniform float uTwinkle;uniform float uZoom;
+uniform float uBgGlow;uniform float uOpacity;uniform float uMouseEnabled;uniform float uMouseStrength;uniform float uMouseRadius;
+varying vec2 vUv;
+vec3 palette(float h){int count=uColorCount;if(count<1)count=1;
+  int idx=int(floor(clamp(h,0.0,0.999999)*float(count)));
+  if(idx<=0)return uColor0;if(idx==1)return uColor1;if(idx==2)return uColor2;if(idx==3)return uColor3;
+  if(idx==4)return uColor4;if(idx==5)return uColor5;if(idx==6)return uColor6;return uColor7;}
+vec3 tanhv(vec3 x){vec3 e=exp(-2.0*x);return (1.0-e)/(1.0+e);}
+vec2 sceneC(vec2 frag,vec2 r){vec2 P=(frag+frag-r)/r.x;float z=0.0;float d=1e3;vec4 O=vec4(0.0);
+  for(int k=0;k<39;k++){if(d<=1e-4)break;O=z*normalize(vec4(P,uZoom,0.0))-vec4(0.0,4.0,1.0,0.0)/4.5;
+    d=1.0-sqrt(length(O*O));z+=d;}return vec2(O.x,atan(O.z,O.y));}
+void mainImage(out vec4 o,vec2 C){vec2 r=iResolution.xy;vec2 uv0=(C+C-r)/r.x;
+  float T=0.1*iTime*uSpeed+9.0;float angRings=max(1.0,floor(6.28318530718*max(uDensity,0.05)+0.5));
+  vec2 Y=vec2(5e-3,6.28318530718/angRings);
+  vec2 c0=sceneC(C,r);vec2 cdx=sceneC(C+vec2(1.0,0.0),r);vec2 cdy=sceneC(C+vec2(0.0,1.0),r);
+  vec2 dCx=cdx-c0;vec2 dCy=cdy-c0;
+  dCx.y-=6.28318530718*floor(dCx.y/6.28318530718+0.5);dCy.y-=6.28318530718*floor(dCy.y/6.28318530718+0.5);
+  vec2 fw=abs(dCx)+abs(dCy);C=c0;
+  vec2 P=vec2(2.0,1.0)*uv0-(r/r.x)*vec2(0.0,1.0);
+  vec4 O=vec4(uBgColor*90.0*uBgGlow/(1e3*dot(P,P)+6.0),0.0);
+  float mGlow=0.0;
+  if(uMouseEnabled>0.5){vec2 mN=(iMouse+iMouse-r)/r.x;float md=length(uv0-mN);
+    mGlow=exp(-md*md/max(uMouseRadius*uMouseRadius,1e-4))*uMouseStrength;O.rgb+=uMouseColor*mGlow*0.25;}
+  float zr=5e-4*uStreakWidth;vec2 rr=vec2(max(length(fw),1e-5));float tail=19.0/max(uStreakLength,0.05);
+  for(int m=0;m<16;m++){if(m>=uStreakCount)break;float jf=float(m)+1.0;
+    float ic=fract(sin(dot(vec2(jf,floor(C.x/Y.x+0.5)),vec2(7.0,11.0))*73.0));
+    vec2 Pp=C-(T+T*ic)*vec2(0.0,1.0);Pp-=floor(Pp/Y+0.5)*Y;float h=fract(8663.0*ic);
+    vec3 col=palette(h);float weight=mix(1.5,1.0+sin(T+7.0*h+4.0),uTwinkle);weight*=(1.0+mGlow*2.0);
+    vec2 inner=vec2(length(max(Pp,vec2(-1.0,0.0))),length(Pp)-zr)-zr;
+    vec2 sm=vec2(1.0)-smoothstep(-rr,rr,inner);
+    O.rgb+=dot(sm,vec2(exp(tail*Pp.y),3.0))*col*weight;C.x+=Y.x/8.0;}
+  vec3 colr=sqrt(tanhv(max(O.rgb*uGlow-vec3(0.04,0.08,0.02),0.0)));o=vec4(colr,uOpacity);}
+void main(){vec4 color;mainImage(color,vUv*iResolution.xy);gl_FragColor=color;}`;
+
+/* ===== 配色：换成界面霓虹绿（替换原版蓝紫粉）===== */
+const COLORS = ['#3BF5C0', '#00E0A4', '#19C39A'];   // 薄荷 / 主绿 / 青绿
+const BG = '#00C48F';                               // 中心辉光底色(绿)
+const PARAMS = { speed:0.5, streakCount:4, streakWidth:1, streakLength:1, glow:1,
+                 density:0.6, twinkle:1, zoom:3, bgGlow:0.5, opacity:1 };
+
+function hexRGB(hex){const c=hex.replace('#','').padEnd(6,'0');
+  return [parseInt(c.slice(0,2),16)/255,parseInt(c.slice(2,4),16)/255,parseInt(c.slice(4,6),16)/255];}
+
+const canvas=document.getElementById('gl');
+const gl=canvas.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:false});
+if(!gl){document.getElementById('fallback').style.display='block';}
+else{
+  function sh(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);
+    if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(s));return s;}
+  const prog=gl.createProgram();
+  gl.attachShader(prog,sh(gl.VERTEX_SHADER,vertex));
+  gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,fragment));
+  gl.linkProgram(prog);gl.useProgram(prog);
+  // 全屏大三角
+  const pos=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,pos);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1, 3,-1, -1,3]),gl.STATIC_DRAW);
+  const aP=gl.getAttribLocation(prog,'position');gl.enableVertexAttribArray(aP);gl.vertexAttribPointer(aP,2,gl.FLOAT,false,0,0);
+  const uvb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,uvb);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([0,0, 2,0, 0,2]),gl.STATIC_DRAW);
+  const aU=gl.getAttribLocation(prog,'uv');gl.enableVertexAttribArray(aU);gl.vertexAttribPointer(aU,2,gl.FLOAT,false,0,0);
+  const U=n=>gl.getUniformLocation(prog,n);
+  // 颜色数组(补满8个) + 均值
+  const base=COLORS.slice(0,8),cnt=base.length,arr=[];
+  for(let i=0;i<8;i++)arr.push(hexRGB(base[Math.min(i,cnt-1)]));
+  for(let i=0;i<8;i++)gl.uniform3fv(U('uColor'+i),arr[i]);
+  gl.uniform1i(U('uColorCount'),cnt);
+  gl.uniform3fv(U('uBgColor'),hexRGB(BG));
+  gl.uniform3fv(U('uMouseColor'),hexRGB(COLORS[0]));
+  gl.uniform1f(U('uSpeed'),PARAMS.speed);gl.uniform1i(U('uStreakCount'),PARAMS.streakCount);
+  gl.uniform1f(U('uStreakWidth'),PARAMS.streakWidth);gl.uniform1f(U('uStreakLength'),PARAMS.streakLength);
+  gl.uniform1f(U('uGlow'),PARAMS.glow);gl.uniform1f(U('uDensity'),PARAMS.density);
+  gl.uniform1f(U('uTwinkle'),PARAMS.twinkle);gl.uniform1f(U('uZoom'),PARAMS.zoom);
+  gl.uniform1f(U('uBgGlow'),PARAMS.bgGlow);gl.uniform1f(U('uOpacity'),PARAMS.opacity);
+  gl.uniform1f(U('uMouseEnabled'),0.0);gl.uniform1f(U('uMouseStrength'),0.5);gl.uniform1f(U('uMouseRadius'),1.0);
+  const uRes=U('iResolution'),uTime=U('iTime');
+  function resize(){const dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=innerWidth*dpr;canvas.height=innerHeight*dpr;
+    gl.viewport(0,0,canvas.width,canvas.height);gl.uniform3f(uRes,canvas.width,canvas.height,1);}
+  addEventListener('resize',resize);resize();
+  function loop(t){gl.uniform1f(uTime,t*0.001);gl.drawArrays(gl.TRIANGLES,0,3);requestAnimationFrame(loop);}
+  requestAnimationFrame(loop);
+}
 </script>
 </body>
 </html>
