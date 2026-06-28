@@ -12,25 +12,20 @@
     </filter>
   </defs>
 
-  <!-- 整块深色底板：保证 logo 放在任意背景上文字都清晰 -->
+  <!-- 深色底板：放任意背景文字都清晰 -->
   <rect x="1" y="1" width="518" height="148" rx="26" fill="url(#plate)" stroke="#00E0A4" stroke-opacity="0.4" stroke-width="2"/>
 
-  <!-- ===== 左侧图标 ===== -->
-  <g transform="translate(26,29)">
-    <g stroke="#5C6B7A" stroke-width="3.2" fill="none" stroke-linecap="round" opacity="0.9">
-      <ellipse cx="18" cy="20" rx="15" ry="5.5"/>
-      <path d="M3 20 V46 a15 5.5 0 0 0 30 0 V20"/>
-      <path d="M3 33 a15 5.5 0 0 0 30 0"/>
-    </g>
+  <!-- ===== 左侧图标：代码括号迁移 ===== -->
+  <g transform="translate(34,40)">
+    <!-- 左括号(旧·暗) -->
+    <path d="M14 2 H3 V68 H14" fill="none" stroke="#5C6B7A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- 箭头(绿·发光) -->
     <g filter="url(#lglow)">
-      <path d="M27 64 H53" stroke="url(#lacc)" stroke-width="6.5" stroke-linecap="round"/>
-      <path d="M48 56 L61 64 L48 72 Z" fill="url(#lacc)"/>
+      <path d="M20 35 H40" stroke="url(#lacc)" stroke-width="6" stroke-linecap="round"/>
+      <path d="M35 27 L49 35 L35 43 Z" fill="url(#lacc)"/>
     </g>
-    <g stroke="url(#lacc)" stroke-width="3.5" fill="none" stroke-linecap="round" filter="url(#lglow)">
-      <ellipse cx="66" cy="16" rx="16" ry="6"/>
-      <path d="M50 16 V44 a16 6 0 0 0 32 0 V16"/>
-      <path d="M50 30 a16 6 0 0 0 32 0"/>
-    </g>
+    <!-- 右括号(新·亮) -->
+    <path d="M51 2 H62 V68 H51" fill="none" stroke="url(#lacc)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" filter="url(#lglow)"/>
   </g>
 
   <!-- 竖向分隔线 -->
