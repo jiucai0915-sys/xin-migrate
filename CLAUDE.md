@@ -15,7 +15,7 @@
 - `kb/`、`data/`、`web/` —— B 负责（知识库 + 演示数据 + 前端）
 
 ## 技术栈
-- Python 3.10+
+- Python 3.9+
 - 端侧模型：Qwen2.5-Coder（7b/32b）经 Ollama 提供，OpenAI 兼容接口
 - Agent：自研轻量 ReAct 循环，**不要引入 LangChain 等重框架**（2 人 48h 越简单越稳）
 - 目标库验证：优先达梦/金仓社区版；装不上则用 PostgreSQL 模拟（语法接近），并在报告里注明

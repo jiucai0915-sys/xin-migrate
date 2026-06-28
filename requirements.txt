@@ -10,3 +10,6 @@ sqlparse>=0.4.0
 
 # 前端（演示界面，web/app.py 用 Streamlit）
 streamlit>=1.30.0
+
+# 测试（可选）：pytest -q
+pytest>=7.0.0
