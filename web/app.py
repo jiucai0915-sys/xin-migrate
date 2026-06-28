@@ -48,6 +48,30 @@ SCENARIOS = {
 st.set_page_config(page_title="信迁 Agent", page_icon="🔌", layout="wide")
 
 
+# ====================== 开场闪屏（Lightfall 进场动画，每会话只播一次） ======================
+def splash_screen():
+    """首次进入时全屏播放 assets/intro.html，点「进入系统」后进主界面。"""
+    import streamlit.components.v1 as components
+    intro_path = os.path.join(ROOT, "assets", "intro.html")
+    if not os.path.exists(intro_path):
+        return  # 没有动画文件就跳过，不影响主流程
+    # 隐藏顶部工具条，让闪屏更沉浸
+    st.markdown("<style>header{visibility:hidden} .block-container{padding-top:0}</style>",
+                unsafe_allow_html=True)
+    with open(intro_path, "r", encoding="utf-8") as f:
+        components.html(f.read(), height=600, scrolling=False)
+    c1, c2, c3 = st.columns([2, 1, 2])
+    with c2:
+        if st.button("进入系统 →", type="primary", use_container_width=True):
+            st.session_state["entered"] = True
+            st.rerun()
+    st.stop()
+
+
+if not st.session_state.get("entered"):
+    splash_screen()
+
+
 # ====================== 样式：深色安全运维大屏科技风 ======================
 def inject_css():
     st.markdown(
