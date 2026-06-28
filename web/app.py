@@ -59,7 +59,7 @@ def splash_screen():
     st.markdown("<style>header{visibility:hidden} .block-container{padding-top:0}</style>",
                 unsafe_allow_html=True)
     with open(intro_path, "r", encoding="utf-8") as f:
-        components.html(f.read(), height=600, scrolling=False)
+        components.html(f.read(), height=560, scrolling=False)
     c1, c2, c3 = st.columns([2, 1, 2])
     with c2:
         if st.button("进入系统 →", type="primary", use_container_width=True):
