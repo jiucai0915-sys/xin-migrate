@@ -74,15 +74,13 @@ def splash_screen():
               opacity:0; animation:enterFadeIn 1s cubic-bezier(.16,1,.3,1) 3.4s forwards;}
           @keyframes enterFadeIn{to{opacity:1}}
           div.stButton > button{
-              padding:11px 40px; font-size:15px; font-weight:500; letter-spacing:2px;
-              color:#cdeee4 !important; background:rgba(0,224,164,.06) !important;
-              border:1px solid rgba(0,224,164,.35) !important; border-radius:30px !important;
-              backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+              padding:11px 40px; font-size:15px; font-weight:500; letter-spacing:3px;
+              color:#9fe6d2 !important; background:transparent !important;
+              border:none !important; border-radius:30px !important;
               box-shadow:none !important; transition:all .35s ease !important;}
           div.stButton > button:hover{
-              color:#eafff7 !important; background:rgba(0,224,164,.14) !important;
-              border-color:rgba(0,224,164,.7) !important;
-              box-shadow:0 0 22px rgba(0,224,164,.28) !important;}
+              color:#eafff7 !important; background:transparent !important;
+              letter-spacing:5px; text-shadow:0 0 16px rgba(0,224,164,.6);}
         </style>
         """,
         unsafe_allow_html=True,
