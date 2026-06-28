@@ -69,16 +69,27 @@ def splash_screen():
               position:fixed !important; top:0; left:0;
               width:100vw !important; height:100vh !important;
               border:none !important; z-index:99990 !important;}
-          /* 「进入系统」按钮浮在动画之上、底部居中 */
-          div.stButton{position:fixed; left:50%; bottom:6vh; transform:translateX(-50%); z-index:99999;}
-          div.stButton > button{padding:12px 46px; font-size:17px; font-weight:700; border-radius:30px;}
+          /* 「进入系统」按钮：极简幽灵风，动画播完后柔和淡入，融入画面不抢戏 */
+          div.stButton{position:fixed; left:50%; bottom:7vh; transform:translateX(-50%); z-index:99999;
+              opacity:0; animation:enterFadeIn 1s cubic-bezier(.16,1,.3,1) 3.4s forwards;}
+          @keyframes enterFadeIn{to{opacity:1}}
+          div.stButton > button{
+              padding:11px 40px; font-size:15px; font-weight:500; letter-spacing:2px;
+              color:#cdeee4 !important; background:rgba(0,224,164,.06) !important;
+              border:1px solid rgba(0,224,164,.35) !important; border-radius:30px !important;
+              backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+              box-shadow:none !important; transition:all .35s ease !important;}
+          div.stButton > button:hover{
+              color:#eafff7 !important; background:rgba(0,224,164,.14) !important;
+              border-color:rgba(0,224,164,.7) !important;
+              box-shadow:0 0 22px rgba(0,224,164,.28) !important;}
         </style>
         """,
         unsafe_allow_html=True,
     )
     with open(intro_path, "r", encoding="utf-8") as f:
         components.html(f.read(), height=1000, scrolling=False)
-    if st.button("进入系统 →", type="primary"):
+    if st.button("进入系统", type="secondary"):
         st.session_state["entered"] = True
         st.rerun()
     st.stop()
