@@ -48,23 +48,39 @@ SCENARIOS = {
 st.set_page_config(page_title="信迁 Agent", page_icon="🔌", layout="wide")
 
 
-# ====================== 开场闪屏（Lightfall 进场动画，每会话只播一次） ======================
+# ====================== 开场闪屏（Lightfall 进场动画，全屏无边框，每次刷新都播） ======================
 def splash_screen():
-    """首次进入时全屏播放 assets/intro.html，点「进入系统」后进主界面。"""
+    """全屏播放 assets/intro.html（盖住整个视口含顶栏），点「进入系统」进主界面。"""
     import streamlit.components.v1 as components
     intro_path = os.path.join(ROOT, "assets", "intro.html")
     if not os.path.exists(intro_path):
         return  # 没有动画文件就跳过，不影响主流程
-    # 隐藏顶部工具条，让闪屏更沉浸
-    st.markdown("<style>header{visibility:hidden} .block-container{padding-top:0}</style>",
-                unsafe_allow_html=True)
+
+    # 把承载动画的 iframe 强制拉成全屏固定层，盖住 Streamlit 顶栏/边距；按钮浮在最上层
+    st.markdown(
+        """
+        <style>
+          header, #MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"]{
+              display:none !important;}
+          .stApp{background:#060A0E;}
+          .block-container{padding:0 !important; max-width:100% !important;}
+          /* 动画 iframe 铺满整个视口 */
+          .stApp iframe{
+              position:fixed !important; top:0; left:0;
+              width:100vw !important; height:100vh !important;
+              border:none !important; z-index:99990 !important;}
+          /* 「进入系统」按钮浮在动画之上、底部居中 */
+          div.stButton{position:fixed; left:50%; bottom:6vh; transform:translateX(-50%); z-index:99999;}
+          div.stButton > button{padding:12px 46px; font-size:17px; font-weight:700; border-radius:30px;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     with open(intro_path, "r", encoding="utf-8") as f:
-        components.html(f.read(), height=560, scrolling=False)
-    c1, c2, c3 = st.columns([2, 1, 2])
-    with c2:
-        if st.button("进入系统 →", type="primary", use_container_width=True):
-            st.session_state["entered"] = True
-            st.rerun()
+        components.html(f.read(), height=1000, scrolling=False)
+    if st.button("进入系统 →", type="primary"):
+        st.session_state["entered"] = True
+        st.rerun()
     st.stop()
 
 
